@@ -1,6 +1,6 @@
 # 실물 로봇손 설치 가이드
 
-이 이미지는 Hiwonder uHandPi용으로 준비하는 Raspberry Pi OS 배포본입니다. Windows PC에서 microSD 카드에 기록하고 로봇손에 넣으면 uHandServer가 부팅 시 자동으로 시작되도록 구성합니다.
+이 이미지는 Hiwonder uHandPi용 Raspberry Pi OS 배포본입니다. Windows PC에서 microSD 카드에 기록하고 로봇손에 넣으면 uHandServer가 부팅 시 자동으로 시작되도록 구성합니다.
 
 이미 SD 이미지로 사용 중인 로봇손에서 서버 버전만 올리려면 [uHandServer 업데이트 및 이전 버전 복귀](../projects/uhand-server/README.md#서버-소프트웨어만-업데이트하기)를 따르세요.
 
@@ -22,18 +22,26 @@
 | 항목 | 배포 정보 |
 | --- | --- |
 | 대상 서버 | uHandServer 1.0.0 |
-| Google Drive 다운로드 | 배포 준비 중 |
-| 다운로드 파일명 / SHA-256 | 업로드할 파일 확정 후 기재 |
-| 압축 해제한 `.img` 크기(바이트) | 이미지 추출 후 기재 |
-| 복원 시험을 통과한 32 GB 카드 | 시험 후 모델과 실용량 기재 |
+| 다운로드 | [로봇손 SD 카드 이미지 ZIP 받기 (Google Drive)](https://drive.google.com/file/d/1FIJfN0GGV1XN-rRClmctAZMtp2pYu3bc/view) |
+| 다운로드한 ZIP | `uHandControl-1.0.0.zip` · 3,803,557,773바이트 |
+| ZIP의 SHA-256 | `BD4CEFB9F285501A5C61DD47E90E3EEB353B592313D1170080719BAD49AC1EF6` |
+| 압축을 푼 IMG | `uHandControl-1.0.0.img` · 31,266,439,168바이트 |
+| IMG의 SHA-256 | `FCCD13E676E93DC063BAC53B06AA4D49C2473D82EDF6400F2129C14C0C4A781F` |
 
 준비물은 Windows PC, microSD 카드 리더기, 내용을 지워도 되는 32 GB microSD 카드, Ethernet 케이블입니다. 같은 32 GB 제품이라도 실제 용량이 다를 수 있습니다. 대상 카드의 바이트 수가 압축 해제한 이미지 크기 이상이어야 전체 이미지를 기록할 수 있습니다.
 
 ## 2. Windows에서 카드에 기록
 
-1. 위 표의 Google Drive 링크가 공개되면 파일을 내려받습니다. PowerShell에서 `Get-FileHash -Algorithm SHA256 "다운로드한 파일의 전체 경로"`를 실행해 표시된 해시가 표의 값과 일치하는지 확인합니다. 압축 파일을 받았다면 검사는 다운로드한 압축 파일에 수행한 뒤 압축을 풀어 `.img`를 꺼냅니다.
+1. 위 표의 **Google Drive**에서 ZIP을 내려받고 다운로드 폴더에서 PowerShell을 엽니다. 아래 첫 명령의 결과를 표의 **ZIP의 SHA-256**과 비교합니다. 값이 일치하면 압축을 풀고 두 번째 명령으로 **IMG의 SHA-256**도 확인합니다. IMG를 다른 폴더에 풀었다면 해당 위치에서 두 번째 명령을 실행하세요.
+
+   ```powershell
+   Get-FileHash -Algorithm SHA256 -LiteralPath ".\uHandControl-1.0.0.zip"
+   Get-FileHash -Algorithm SHA256 -LiteralPath ".\uHandControl-1.0.0.img"
+   ```
+
+   해시가 다르면 카드에 기록하기 전에 다운로드 또는 압축 해제를 다시 진행하세요.
 2. 대상 카드를 PC에 꽂고 Windows 탐색기에서 드라이브 문자를 확인합니다. **Write를 누르면 선택한 카드의 기존 내용이 덮어써집니다.**
-3. Win32 Disk Imager에서 **Image File**에 내려받은 `.img`를, **Device**에 대상 카드의 드라이브 문자를 지정합니다. 두 항목을 다시 확인하고 **Write**를 누릅니다. [Win32 Disk Imager 공식 배포처](https://sourceforge.net/projects/win32diskimager/)
+3. Win32 Disk Imager에서 **Image File**에 압축을 푼 `uHandControl-1.0.0.img`를, **Device**에 대상 카드의 드라이브 문자를 지정합니다. 두 항목을 다시 확인하고 **Write**를 누릅니다. [Win32 Disk Imager 공식 배포처](https://sourceforge.net/projects/win32diskimager/)
 4. 완료 메시지가 나오면 카드를 안전하게 꺼냅니다. 전원이 꺼진 로봇손에 카드를 넣고 PC와 로봇손을 Ethernet 케이블로 연결한 뒤 전원을 켭니다. 손이 초기 자세로 돌아가고 준비음이 끝날 때까지 기다립니다.
 
 ## 3. 첫 로그인과 제어 연결

@@ -2,9 +2,16 @@
 
 Hiwonder uHandPi의 손동작·소리·빛을 카드로 만들고, 가상 로봇손에서 확인한 뒤 실제 장비에서 실행하는 Python 프로젝트입니다.
 
+## 1.0.0 다운로드
+
+| 사용 목적 | 받을 파일 |
+| --- | --- |
+| Windows PC에서 실행 | [프로그램 소스 ZIP (GitHub)](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.0.zip)을 풀고 `run.pyw`를 실행합니다. |
+| 실물 로봇손의 microSD 카드 준비 | [로봇손 OS 이미지 ZIP (Google Drive)](https://drive.google.com/file/d/1FIJfN0GGV1XN-rRClmctAZMtp2pYu3bc/view)을 풀고 `uHandControl-1.0.0.img`를 카드에 기록합니다. ZIP과 IMG 각각의 SHA-256 및 기록 방법은 [실물 설치 가이드](docs/hardware-setup.md)에 있습니다. |
+
 ## Windows에서 첫 동작 실행하기
 
-1. **준비** — Windows에 64비트 Python 3.13(검증 환경 3.13.2)과 기본 설치 구성의 Tkinter가 필요합니다. 첫 설치는 인터넷에 연결해 진행하세요. GitHub에서 **Code → Download ZIP**으로 받은 파일은 먼저 쓰기 가능한 폴더에 압축을 모두 풉니다.
+1. **준비** — Windows에 64비트 Python 3.13(검증 환경 3.13.2)과 기본 설치 구성의 Tkinter가 필요합니다. 첫 설치는 인터넷에 연결해 진행하세요. 위 표에서 받은 **프로그램 소스 ZIP**은 먼저 쓰기 가능한 폴더에 압축을 모두 풉니다.
 2. **실행** — 이 README 옆의 `run.pyw`를 더블클릭합니다. 파일 연결이 되어 있지 않으면 해당 폴더에서 PowerShell을 열고 `python run.pyw`를 실행합니다. **uHandVirtualServer**를 선택하면 전용 Python 환경을 준비하고 가상 서버를 엽니다. 시작음이 끝나고 **연결 대기**가 표시될 때까지 기다립니다.
 3. **카드 만들기** — 같은 실행기에서 **uHandMotionCreator**를 엽니다. **손동작** 탭에서 검지 슬라이더를 옮기고 **+ 동작 추가**를 누릅니다. 또는 **열기**에서 [손동작·부저·LED 혼합 예제](projects/uhand-motion-creator/examples/sequences/mixed-demo.uhand.json)를 고릅니다.
 4. **가상 로봇손 움직이기** — 편집기 상단 **서버 연결·테스트 → 가상 서버·이 PC → 연결**을 누릅니다. 가상 서버의 기본 주소는 `127.0.0.1:5000`입니다. 연결음이 끝난 뒤 **처음부터 실행**을 누르면 서버 창에서 로봇손의 자세가 바뀝니다.
