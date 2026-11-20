@@ -4,7 +4,7 @@ Python 코드에서 uHandVirtualServer 또는 실물 uHandServer를 제어하는
 
 ## 설치와 첫 실행
 
-VS Code에서 바로 실행하려면 먼저 uHandVirtualServer를 켜고 **연결 대기**를 확인하세요. [상태 조회 예제](examples/get_status.py) 또는 [손·부저·LED 예제](examples/basic_sequence.py)를 열고 **Run Python File**을 누르면 됩니다. 두 예제는 파일 위치를 기준으로 같은 프로젝트의 `src/uhand_client_module`을 찾아 사용하며, 기본 연결 대상은 이 PC의 `127.0.0.1:5000`입니다. 다른 주소나 포트는 터미널에서 `--ip`, `--port`로 지정할 수 있습니다.
+VS Code에서 바로 실행하려면 먼저 uHandVirtualServer를 켜고 **연결 대기**를 확인하세요. [상태 조회 예제](examples/get_status.py) 또는 [손가락으로 1~5 세기 예제](examples/basic_sequence.py)를 열고 **Run Python File**을 누르면 됩니다. 두 예제는 파일 위치를 기준으로 같은 프로젝트의 `src/uhand_client_module`을 찾아 사용하며, 기본 연결 대상은 이 PC의 `127.0.0.1:5000`입니다. 다른 주소나 포트는 터미널에서 `--ip`, `--port`로 지정할 수 있습니다.
 
 Windows용 Python 3.10 이상이 필요합니다. 두 GUI와 함께 사용하는 검증 환경은 Python 3.13.2입니다. 저장소 최상위에서 [실행기](../../run.pyw)로 GUI 하나를 열었다면 ClientModule도 같은 환경에 설치되어 있습니다. 가상 서버가 연결 대기 중일 때 다음 명령을 실행하세요.
 
@@ -26,9 +26,14 @@ import uhand_client_module as hand
 
 try:
     hand.Connect("127.0.0.1", 5000)
-    hand.SetuHandPulse(1500, 1800, 1500, 1500, 1500, 1500, 500)
-    hand.SetuHandBuzzer(1000, 250)
-    hand.SetuHandLED(255, 128, 0, 50)
+    # 엄지, 검지, 중지, 약지, 소지, 손목 순서입니다. 각 자세로 1.2초 동안 이동합니다.
+    hand.SetuHandPulse(2000, 2000, 1000, 1000, 1000, 1500, 1200)  # 1: 검지
+    hand.SetuHandPulse(2000, 2000, 2000, 1000, 1000, 1500, 1200)  # 2: 중지 추가
+    hand.SetuHandPulse(2000, 2000, 2000, 2000, 1000, 1500, 1200)  # 3: 약지 추가
+    hand.SetuHandPulse(2000, 2000, 2000, 2000, 2000, 1500, 1200)  # 4: 소지 추가
+    hand.SetuHandPulse(1000, 2000, 2000, 2000, 2000, 1500, 1200)  # 5: 엄지 추가
+    hand.SetuHandBuzzer(1000, 500)
+    hand.SetuHandLED(False, True, False)
     print(hand.GetStatus())
 except hand.UHandError as error:
     print(type(error).__name__, str(error))
@@ -36,7 +41,7 @@ finally:
     hand.Disconnect()
 ```
 
-이 예제는 검지 자세를 0.5초에 걸쳐 바꾸고 부저를 0.25초 울린 뒤 두 LED를 주황색 밝기 50%로 켭니다. 실물 서버에 연결할 때는 IP를 `192.168.61.1`로 바꿉니다. 서버의 시작·연결·연결 해제 과정에서는 장비가 초기 자세로 복귀합니다.
+숫자 1은 검지만 펴고, 중지·약지·소지·엄지를 하나씩 더 펴서 5까지 셉니다. 손목은 중앙(1500)에 유지합니다. 다섯 손가락을 모두 펴면 1000 Hz 부저가 0.5초 울리고 두 LED가 초록색으로 켜집니다. 실물 서버에 연결할 때는 IP를 `192.168.61.1`로 바꿉니다. 서버의 시작·연결·연결 해제 과정에서는 장비가 초기 자세로 복귀합니다.
 
 ## 여섯 함수의 사용법
 
