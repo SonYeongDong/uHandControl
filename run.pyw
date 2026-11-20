@@ -1,4 +1,4 @@
-"""Windows launcher for the two uHandControl desktop programs."""
+"""Desktop launcher for the two uHandControl desktop programs."""
 from pathlib import Path
 import subprocess
 import sys
@@ -6,13 +6,17 @@ import venv
 
 ROOT = Path(__file__).resolve().parent
 ENV = ROOT / ".venv"
-PYTHON = ENV / "Scripts" / "python.exe"
-READY = ENV / ".uhand-1.0.0-ready"
+WINDOWS = sys.platform == "win32"
+PYTHON = ENV / "Scripts" / "python.exe" if WINDOWS else ENV / "bin" / "python"
+GUI_PYTHON = PYTHON.with_name("pythonw.exe") if WINDOWS else PYTHON
+READY = ENV / f".uhand-1.0.0-{sys.platform}-desktop1-ready"
 LOG = ROOT / "build" / "launcher.log"
 PACKAGES = (
     "shared/uhand-server-lifecycle", "shared/uhand-about", "shared/uhand-model",
     "projects/uhand-client-module", "projects/uhand-motion-creator", "projects/uhand-virtual-server",
 )
+if sys.platform == "darwin":
+    PACKAGES += ("shared/uhand-desktop-audio",)
 APPS = {"uHandVirtualServer": "uhand_virtual_server", "uHandMotionCreator": "uhand_motion_creator"}
 
 
@@ -20,6 +24,8 @@ def install_python():
     # pip unpacks deeply nested Qt resources under sys.prefix. An extended
     # executable path also gives the child interpreter an extended sys.prefix.
     path = str(PYTHON)
+    if not WINDOWS:
+        return path
     if path.startswith("\\\\?\\"):
         return path
     if path.startswith("\\\\"):
@@ -27,13 +33,20 @@ def install_python():
     return "\\\\?\\" + path
 
 
-def prepare():
-    import msvcrt
+def lock_install(file):
+    if WINDOWS:
+        import msvcrt
+        file.seek(0)
+        msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
+
+def prepare():
     LOG.parent.mkdir(exist_ok=True)
     with (LOG.parent / "install.lock").open("a+b") as lock:
-        lock.seek(0)
-        msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        lock_install(lock)
         if READY.is_file() and PYTHON.is_file():
             return
         if not PYTHON.is_file():
@@ -41,14 +54,16 @@ def prepare():
         subprocess.run([install_python(), "-m", "pip", "install", "--disable-pip-version-check",
                         "--constraint", str(ROOT / "requirements-runtime.lock"),
                         *PACKAGES], cwd=ROOT, check=True)
-        subprocess.run([str(PYTHON), "-c", "import uhand_motion_creator.ui, uhand_virtual_server.ui"],
-                       cwd=ROOT, check=True)
+        imports = "import uhand_motion_creator.ui, uhand_virtual_server.ui"
+        if sys.platform == "darwin":
+            imports += ", uhand_desktop_audio, pygame.mixer"
+        subprocess.run([str(PYTHON), "-c", imports], cwd=ROOT, check=True)
         READY.touch()
 
 
 def launch(label):
     with LOG.open("a", encoding="utf-8") as log:
-        return subprocess.Popen([str(PYTHON.with_name("pythonw.exe")), "-m", APPS[label]],
+        return subprocess.Popen([str(GUI_PYTHON), "-m", APPS[label]],
                                 cwd=ROOT, stdout=log, stderr=log)
 
 
@@ -58,10 +73,16 @@ def main():
 
     window = tk.Tk()
     window.title("uHandControl 1.0.0")
-    if sys.platform != "win32" or sys.version_info < (3, 13):
-        messagebox.showerror("uHandControl", "Windows용 Python 3.13 이상이 필요합니다.")
+    if sys.platform not in ("win32", "darwin") or sys.version_info < (3, 13):
+        messagebox.showerror("uHandControl", "Windows 또는 macOS용 Python 3.13 이상이 필요합니다.")
         window.destroy()
         return
+    if sys.platform == "darwin":
+        import platform
+        if int(platform.mac_ver()[0].split(".")[0]) < 14:
+            messagebox.showerror("uHandControl", "두 GUI를 실행하려면 macOS 14 이상이 필요합니다.")
+            window.destroy()
+            return
     pane = ttk.Frame(window, padding=20)
     pane.pack(fill="both", expand=True)
     status = tk.StringVar(value="실행할 프로그램을 선택하세요.")
@@ -87,7 +108,7 @@ def main():
             with LOG.open("a", encoding="utf-8") as log:
                 child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--prepare"],
                                          cwd=ROOT, stdout=log, stderr=log,
-                                         creationflags=subprocess.CREATE_NO_WINDOW)
+                                         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except OSError as error:
             enable()
             status.set("실행 환경을 준비하지 못했습니다.")

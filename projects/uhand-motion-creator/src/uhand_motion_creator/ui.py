@@ -1,4 +1,5 @@
 from .card_clipboard import MIME_TYPE, encode_cards, decode_cards
+from .shortcuts import PREFIX
 from PySide6.QtCore import QMimeData
 """Light Studio authoring UI with optional explicit server control."""
 from time import perf_counter
@@ -6,7 +7,7 @@ from functools import lru_cache
 import math
 import re
 from dataclasses import replace
-from .audio import WindowsAudio
+from .audio import create_audio
 from .remote_ui import RemoteUi
 from .file_ui import FileUi
 from .pulse_spin import PulseSpinBox
@@ -135,7 +136,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
     def __init__(self,audio=None):
         super().__init__()
         self.init_remote()
-        self.audio=audio if audio is not None else WindowsAudio()
+        self.audio=audio if audio is not None else create_audio()
         self.led_state=(False,False,False)
         self.sound_timer=QTimer(self);self.sound_timer.setSingleShot(True);self.sound_timer.setTimerType(Qt.TimerType.PreciseTimer);self.sound_timer.timeout.connect(self.stop_sound)
         self.sequence=Sequence();self.selected=-1;self.loading=False;self.force_close=False;self.name_serials=[1,1,1]
@@ -350,7 +351,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.list.commandRequested.connect(lambda action:self.card_command(action,self.list))
         ll.addWidget(self.list)
         self.empty=label("아직 동작이 없습니다. 오른쪽의 ‘동작 추가’로 시작하세요.","muted")
-        self.selection_hint=label("Shift: 범위 선택 · 드래그: 이동 · Delete: 삭제 · Ctrl+C/X/V","muted")
+        self.selection_hint=label(f"Shift: 범위 선택 · 드래그: 이동 · Delete: 삭제 · {PREFIX}C/X/V","muted")
         hints=QHBoxLayout();hints.setContentsMargins(0,0,0,0);hints.addWidget(self.empty);hints.addWidget(self.selection_hint)
         ll.addLayout(hints)
         bottom.addWidget(list_card,3)
@@ -430,7 +431,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         help_menu=self.menuBar().addMenu("도움말");help_menu.addAction("사용 방법",self.help)
         add_about_action(self, "uHandMotionCreator", "로봇손 동작의 설계부터 실행까지", __version__)
     def help(self):
-        QMessageBox.information(self,"사용 방법","1. 손동작 / 부저 / 삼색 LED 탭을 선택합니다.\n2. 값을 편집하고 이름을 정해 동작을 추가합니다.\n3. 목록 선택 후 수정은 ‘선택 동작에 적용’으로 확정합니다.\n4. Shift+클릭으로 여러 카드를 선택한 뒤 함께 드래그할 수 있습니다.\n5. 시퀀스 재생으로 PC에서 확인하고 전체 코드를 복사합니다.\n6. 서버 연결·테스트에서 선택적으로 가상/실물 서버에 연결합니다.\n7. 직접 제어 모드를 켜고 서버에 적용하거나 저장 카드를 실행합니다.\n서버 정지는 현재 명령 완료 후 다음 카드 실행을 중단합니다.\n\n부저: 미리듣기를 눌러야 소리가 납니다.\nLED: 즉시 변경 후 다음 LED 카드까지 유지됩니다.\n탭 전환: 미적용 수정 확인 후 새 카드 작성을 시작합니다.\n\n자세 편집: 손가락 상하 / 손바닥 좌우 드래그\n카메라: 모든 모드에서 오른쪽 드래그로 회전 / 휠로 확대·축소\n파일 메뉴에서 JSON으로 저장(Ctrl+S)하고 다시 열 수 있습니다(Ctrl+O).")
+        QMessageBox.information(self,"사용 방법",f"1. 손동작 / 부저 / 삼색 LED 탭을 선택합니다.\n2. 값을 편집하고 이름을 정해 동작을 추가합니다.\n3. 목록 선택 후 수정은 ‘선택 동작에 적용’으로 확정합니다.\n4. Shift+클릭으로 여러 카드를 선택한 뒤 함께 드래그할 수 있습니다.\n5. 시퀀스 재생으로 PC에서 확인하고 전체 코드를 복사합니다.\n6. 서버 연결·테스트에서 선택적으로 가상/실물 서버에 연결합니다.\n7. 직접 제어 모드를 켜고 서버에 적용하거나 저장 카드를 실행합니다.\n서버 정지는 현재 명령 완료 후 다음 카드 실행을 중단합니다.\n\n부저: 미리듣기를 눌러야 소리가 납니다.\nLED: 즉시 변경 후 다음 LED 카드까지 유지됩니다.\n탭 전환: 미적용 수정 확인 후 새 카드 작성을 시작합니다.\n\n자세 편집: 손가락 상하 / 손바닥 좌우 드래그\n카메라: 모든 모드에서 오른쪽 드래그로 회전 / 휠로 확대·축소\n파일 메뉴에서 JSON으로 저장({PREFIX}S)하고 다시 열 수 있습니다({PREFIX}O).")
     def draft(self):
         if self.tabs.currentIndex()==1:return Buzzer(self.frequency.value(),self.buzzer_time.value(),self.name.text().strip(),self.continuous.isChecked())
         if self.tabs.currentIndex()==2:return self.led_editor.card(self.name.text().strip())

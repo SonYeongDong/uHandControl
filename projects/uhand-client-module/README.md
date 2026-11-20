@@ -2,6 +2,8 @@
 
 Python 코드에서 uHandVirtualServer 또는 실물 uHandServer를 제어하는 모듈입니다. 한 Python 프로세스에서 서버 한 대에 연결합니다. 처음 연습할 때는 [같은 PC의 가상 서버](../uhand-virtual-server/README.md)를 먼저 실행하세요.
 
+**macOS 시험 브랜치** · [Mac에서 설치하고 이 프로그램을 확인하는 방법](../../docs/macos-testing.md)
+
 ## 설치와 첫 실행
 
 VS Code에서 바로 실행하려면 먼저 uHandVirtualServer를 켜고 **연결 대기**를 확인하세요. [상태 조회 예제](examples/get_status.py) 또는 [손가락으로 1~5 세기 예제](examples/basic_sequence.py)를 열고 **Run Python File**을 누르면 됩니다. 두 예제는 파일 위치를 기준으로 같은 프로젝트의 `src/uhand_client_module`을 찾아 사용하며, 기본 연결 대상은 이 PC의 `127.0.0.1:5000`입니다. 다른 주소나 포트는 터미널에서 `--ip`, `--port`로 지정할 수 있습니다.

@@ -1,4 +1,5 @@
 """Modeless sequence rows sharing the main editor's sequence and selection."""
+from .shortcuts import HISTORY_KEYS, MODIFIER, PREFIX
 from PySide6.QtCore import Qt,Signal,QSize,QSignalBlocker,QItemSelectionModel
 from PySide6.QtGui import QPainter,QColor,QPen
 from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QListWidgetItem,QListView,QAbstractItemView,QStyledItemDelegate,QStyle
@@ -75,7 +76,7 @@ class SequenceWindow(QDialog):
         self.up.setToolTip("현재 동작 한 개를 앞으로 이동");self.down.setToolTip("현재 동작 한 개를 뒤로 이동")
         for b in (self.up,self.down,self.remove):row.addWidget(b)
         layout.addLayout(row)
-        self.help=QLabel("Shift: 범위 선택 · Ctrl: 개별 선택 · 드래그: 함께 이동 · Delete: 삭제 · Ctrl+C/X/V: 복사/잘라내기/붙여넣기 · Ctrl+Z/Y: 실행 취소/다시 실행")
+        self.help=QLabel(f"Shift: 범위 선택 · {MODIFIER}: 개별 선택 · 드래그: 함께 이동 · Delete: 삭제 · {PREFIX}C/X/V: 복사/잘라내기/붙여넣기 · {HISTORY_KEYS}: 실행 취소/다시 실행")
         self.help.setWordWrap(True)
         self.help.setObjectName("muted");layout.addWidget(self.help)
         # A matching delegate keeps column headings aligned when the window resizes.

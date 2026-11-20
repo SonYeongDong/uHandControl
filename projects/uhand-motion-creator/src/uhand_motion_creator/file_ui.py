@@ -3,6 +3,7 @@ from dataclasses import replace
 from pathlib import Path
 from copy import deepcopy
 import re
+from .shortcuts import PREFIX
 from PySide6.QtCore import Qt, QTimer, QStandardPaths
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QFileDialog, QMessageBox
@@ -38,8 +39,8 @@ class FileUi:
         menu.ensurePolished()
         # Leave a visible gutter between the longest label and its shortcut.
         menu.setMinimumWidth(menu.sizeHint().width() + 3 * menu.fontMetrics().height())
-        self.file_open_button.setToolTip("동작 시퀀스 열기 (Ctrl+O)")
-        self.file_save_button.setToolTip("동작 시퀀스 저장 (Ctrl+S)")
+        self.file_open_button.setToolTip(f"동작 시퀀스 열기 ({PREFIX}O)")
+        self.file_save_button.setToolTip(f"동작 시퀀스 저장 ({PREFIX}S)")
 
     def activate_save_action(self):
         if not self.files_available():

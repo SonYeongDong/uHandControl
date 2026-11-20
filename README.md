@@ -2,6 +2,10 @@
 
 Hiwonder uHandPi의 손동작·소리·빛을 카드로 만들고, 가상 로봇손에서 확인한 뒤 실제 장비에서 실행하는 Python 프로젝트입니다.
 
+## macOS 시험 브랜치
+
+Mac에서 편집기와 가상 서버를 함께 실행하고 Python 예제로 연결할 수 있도록 준비한 브랜치입니다. 동료의 실기 검증을 기다리고 있습니다. [Mac용 브랜치 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/heads/feature/macos-support.zip) · [설치와 검증 순서](docs/macos-testing.md)
+
 ## 1.0.0 다운로드
 
 | 사용 목적 | 받을 파일 |

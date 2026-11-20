@@ -4,6 +4,8 @@
 
 ![왼쪽 3D 손과 오른쪽 연결·부저·LED 패널, 아래의 상태 표와 이벤트 로그](images/overview.png)
 
+**macOS 시험 브랜치** · [Mac에서 설치하고 이 프로그램을 확인하는 방법](../../docs/macos-testing.md)
+
 ## 설치와 실행
 
 Windows에서 저장소 전체를 내려받아 압축을 푼 뒤, 최상위 폴더의 [run.pyw](../../run.pyw)를 더블클릭하고 **uHandVirtualServer**를 선택하세요. 처음에는 전용 환경에 필요한 패키지를 설치합니다. 두 앱을 함께 실행하는 예제는 [처음 실행하기](../../README.md)에 있습니다.

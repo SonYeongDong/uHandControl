@@ -100,8 +100,8 @@ class VirtualServer:
         self.address = validate_bind(host, port)
         self.host, self.port = str(self.address), port
         if audio is None:
-            from .audio import WindowsAudio
-            audio = WindowsAudio()
+            from .audio import create_audio
+            audio = create_audio()
         self.audio = audio
         self._notice_note_index = None
         self.lock = threading.RLock()
@@ -191,6 +191,9 @@ class VirtualServer:
             try:
                 if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+                else:
+                    # Allow immediate power-on after closing a client in TIME_WAIT.
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 sock.bind((str(address), port))
                 sock.listen(8)
                 sock.settimeout(0.2)

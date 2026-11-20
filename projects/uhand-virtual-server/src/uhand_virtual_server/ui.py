@@ -17,7 +17,7 @@ LOGO_COLOR = "#cc3344"
 
 STYLE = """
 QMainWindow, QWidget#root { background: #f3f6fc; color: #182a45; }
-QWidget { font-family: 'Segoe UI', 'Malgun Gothic'; font-size: 13px; color: #182a45; }
+QWidget { font-family: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 13px; color: #182a45; }
 QFrame#card { background: white; border: 1px solid #dce4f1; border-radius: 12px; }
 QLabel { background: transparent; border: none; }
 QLabel#title { font-size: 23px; font-weight: 700; color: #122644; }

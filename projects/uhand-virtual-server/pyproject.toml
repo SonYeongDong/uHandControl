@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "uhand-virtual-server"
 version = "1.0.0"
-description = "Windows virtual uHand server with a Light Studio 3D interface"
+description = "Desktop virtual uHand server with a Light Studio 3D interface"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["uhand-server-lifecycle==0.2.0", "uhand-about==0.1.1", "uhand-model==0.1.3", "PySide6-Essentials==6.12.0", "vispy==0.17.0", "numpy==2.5.5"]
-classifiers = ["Operating System :: Microsoft :: Windows", "Programming Language :: Python :: 3"]
+dependencies = ["uhand-desktop-audio==0.1.0; sys_platform == 'darwin'", "uhand-server-lifecycle==0.2.0", "uhand-about==0.1.1", "uhand-model==0.1.3", "PySide6-Essentials==6.12.0", "vispy==0.17.0", "numpy==2.5.5"]
+classifiers = ["Operating System :: Microsoft :: Windows", "Operating System :: MacOS :: MacOS X", "Programming Language :: Python :: 3"]
 
 [project.gui-scripts]
 uhand-virtual-server = "uhand_virtual_server.__main__:main"

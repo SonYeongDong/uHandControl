@@ -1,6 +1,6 @@
 STYLE = """
 QMainWindow, QWidget#root, QDialog {background:#f3f6fc;color:#182a45;}
-QWidget {font-family:'Segoe UI','Malgun Gothic';font-size:13px;color:#182a45;}
+QWidget {font-family:'Segoe UI','Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;font-size:13px;color:#182a45;}
 QFrame#card {background:white;border:1px solid #dce4f1;border-radius:12px;}
 QLabel {background:transparent;border:none;}
 QLabel#title {font-size:23px;font-weight:700;color:#122644;}
@@ -24,7 +24,7 @@ QSlider::handle:horizontal {width:14px;margin:-5px 0;background:white;border:2px
 QListWidget {border:none;background:white;outline:none;}
 QListWidget::item {background:#f5f8fd;border:1px solid #e1e8f3;border-radius:8px;margin:3px;padding:7px;}
 QListWidget::item:selected {background:#eaf1ff;border:2px solid #386bff;color:#16419f;}
-QPlainTextEdit {background:#f5f8ff;border:1px solid #e0e7f3;border-radius:7px;font-family:'Consolas';font-size:12px;padding:8px;}
+QPlainTextEdit {background:#f5f8ff;border:1px solid #e0e7f3;border-radius:7px;font-family:'Consolas', 'Menlo', monospace;font-size:12px;padding:8px;}
 QMenuBar {background:#f3f6fc;} QMenu {background:white;border:1px solid #d7e1ef;}
 QMenu::item:selected {background:#eaf1ff;}
 QScrollBar:horizontal {height:10px;background:#f4f7fc;}

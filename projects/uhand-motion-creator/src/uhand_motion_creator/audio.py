@@ -2,6 +2,7 @@
 import ctypes
 import io
 import math
+import sys
 import wave
 import numpy as np
 
@@ -99,3 +100,10 @@ class WindowsAudio:
         self.stop()
         if self._handle is not None:
             self._device.close(self._handle);self._handle=None
+
+
+def create_audio():
+    if sys.platform == "darwin":
+        from uhand_desktop_audio import MacAudioOutput
+        return MacAudioOutput(make_pcm)
+    return WindowsAudio()

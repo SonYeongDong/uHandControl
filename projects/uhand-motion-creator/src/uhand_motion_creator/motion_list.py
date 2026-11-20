@@ -1,4 +1,5 @@
 """Card selection and in-window group dragging."""
+from .shortcuts import MACOS, PREFIX
 from PySide6.QtCore import Qt, Signal, QTimer, QEvent, QRect, QItemSelectionModel
 from PySide6.QtGui import QPainter, QColor, QPen, QKeySequence
 from PySide6.QtWidgets import QListWidget, QApplication
@@ -15,7 +16,7 @@ class MotionList(QListWidget):
         self._slot=None;self._position=None;self._ghost=None;self._hotspot=None
         self._scroll_timer=QTimer(self);self._scroll_timer.setInterval(60)
         self._scroll_timer.timeout.connect(self._auto_scroll)
-        self.setToolTip("Shift+클릭으로 범위를 선택한 뒤 끌어 이동합니다. Esc로 취소합니다. Delete: 삭제 · Ctrl+C/X/V: 복사/잘라내기/붙여넣기.")
+        self.setToolTip(f"Shift+클릭으로 범위를 선택한 뒤 끌어 이동합니다. Esc로 취소합니다. Delete: 삭제 · {PREFIX}C/X/V: 복사/잘라내기/붙여넣기.")
 
     def selected_rows(self):
         return tuple(sorted(self.row(item) for item in self.selectedItems()))
@@ -78,7 +79,9 @@ class MotionList(QListWidget):
     def shortcut_action(event):
         for key,action in ((QKeySequence.StandardKey.Copy,"copy"),(QKeySequence.StandardKey.Cut,"cut"),(QKeySequence.StandardKey.Paste,"paste")):
             if event.matches(key):return action
-        if event.key()==Qt.Key.Key_Delete and event.modifiers()==Qt.KeyboardModifier.NoModifier:return "delete"
+        delete_key = event.key() == Qt.Key.Key_Delete or (MACOS and event.key() == Qt.Key.Key_Backspace)
+        if delete_key and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            return "delete"
         return None
 
     def keyPressEvent(self,event):

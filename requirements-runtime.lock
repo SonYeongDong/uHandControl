@@ -7,3 +7,4 @@ numpy==2.5.5
 packaging==26.3
 shiboken6==6.12.0
 vispy==0.17.0
+pygame-ce==2.5.8; sys_platform == "darwin"

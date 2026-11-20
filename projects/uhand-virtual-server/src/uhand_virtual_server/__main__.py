@@ -8,12 +8,12 @@ def main():
     parser.add_argument("--port", type=int, default=5000)
     args = parser.parse_args()
     from PySide6.QtWidgets import QApplication, QMessageBox
-    from .audio import WindowsAudio
+    from .audio import create_audio
     from .server import VirtualServer
     from .ui import MainWindow
     app = QApplication(sys.argv[:1])
     app.setApplicationName("uHandVirtualServer")
-    server = VirtualServer(args.host, args.port, audio=WindowsAudio())
+    server = VirtualServer(args.host, args.port, audio=create_audio())
     try:
         try:
             server.start(background=True)

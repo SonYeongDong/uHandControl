@@ -1,4 +1,4 @@
-"""Finite PCM sine playback on the Windows default output device."""
+"""Finite PCM sine playback on the desktop default output device."""
 import io
 import math
 import sys
@@ -31,17 +31,13 @@ def make_tone(frequency, duration):
     return output.getvalue()
 
 
-class WindowsAudio:
-    description = "Windows 기본 출력 · 48 kHz · 연속 재생"
+class DesktopAudio:
     def __init__(self):
         self._output = None
 
     def _get(self):
-        if sys.platform != "win32":
-            raise CommandError("DEVICE_ERROR", "Windows audio is required.")
         if self._output is None:
-            from ._waveout import WindowsAudio as Output
-            self._output = Output()
+            self._output = self._open_output()
         return self._output
 
     def prime_notice(self, home_ms):
@@ -68,7 +64,7 @@ class WindowsAudio:
                 if cancel.wait(0.005):
                     return
                 if time.monotonic() >= deadline:
-                    raise CommandError("DEVICE_ERROR", "Windows did not finish the notification sound.")
+                    raise CommandError("DEVICE_ERROR", "The audio device did not finish the notification sound.")
         finally:
             output.stop()
 
@@ -102,3 +98,24 @@ class WindowsAudio:
     def close(self):
         if self._output is not None:
             self._output.close()
+
+
+class WindowsAudio(DesktopAudio):
+    description = "Windows 기본 출력 · 48 kHz · 연속 재생"
+
+    def _open_output(self):
+        from ._waveout import WindowsAudio as Output
+        return Output()
+
+
+class MacAudio(DesktopAudio):
+    description = "macOS 기본 출력 · 48 kHz · 연속 재생"
+
+    def _open_output(self):
+        from uhand_desktop_audio import MacAudioOutput
+        from ._waveout import make_pcm
+        return MacAudioOutput(make_pcm)
+
+
+def create_audio():
+    return MacAudio() if sys.platform == "darwin" else WindowsAudio()
