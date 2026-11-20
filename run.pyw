@@ -16,6 +16,17 @@ PACKAGES = (
 APPS = {"uHandVirtualServer": "uhand_virtual_server", "uHandMotionCreator": "uhand_motion_creator"}
 
 
+def install_python():
+    # pip unpacks deeply nested Qt resources under sys.prefix. An extended
+    # executable path also gives the child interpreter an extended sys.prefix.
+    path = str(PYTHON)
+    if path.startswith("\\\\?\\"):
+        return path
+    if path.startswith("\\\\"):
+        return "\\\\?\\UNC\\" + path[2:]
+    return "\\\\?\\" + path
+
+
 def prepare():
     import msvcrt
 
@@ -27,7 +38,7 @@ def prepare():
             return
         if not PYTHON.is_file():
             venv.EnvBuilder(with_pip=True).create(ENV)
-        subprocess.run([str(PYTHON), "-m", "pip", "install", "--disable-pip-version-check",
+        subprocess.run([install_python(), "-m", "pip", "install", "--disable-pip-version-check",
                         "--constraint", str(ROOT / "requirements-runtime.lock"),
                         *PACKAGES], cwd=ROOT, check=True)
         subprocess.run([str(PYTHON), "-c", "import uhand_motion_creator.ui, uhand_virtual_server.ui"],
