@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "uhand-server"
+version = "1.0.0"
+description = "uHandPi physical control server for Raspberry Pi OS"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["uhand-server-lifecycle==0.2.0"]
+classifiers = ["Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3"]
+[project.scripts]
+uhand-server = "uhand_server.__main__:main"
+[tool.setuptools.packages.find]
+where = ["src"]

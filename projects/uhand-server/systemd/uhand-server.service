@@ -1,0 +1,23 @@
+[Unit]
+Description=uHandServer physical robot hand control
+Wants=network-online.target
+After=network-online.target uhandpi.service
+Conflicts=uhandpi.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/pi/uhand-server/releases/1.0.0
+ExecStart=/usr/bin/python3 -B /home/pi/uhand-server/releases/1.0.0/run_server.py --hardware --host 192.168.61.1 --port 5000 --profile /home/pi/uhand-server/releases/1.0.0/config/hardware-profile.json
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=3
+TimeoutStopSec=35
+KillSignal=SIGTERM
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=uhand-server
+
+[Install]
+WantedBy=multi-user.target

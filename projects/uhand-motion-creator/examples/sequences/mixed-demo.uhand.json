@@ -1,0 +1,77 @@
+{
+  "format": "uhand-motion-sequence",
+  "schema_version": 1,
+  "created_with": {
+    "application": "uHandMotionCreator",
+    "version": "0.7.0"
+  },
+  "units": {
+    "pulse": "us",
+    "running_time": "ms",
+    "frequency": "Hz"
+  },
+  "cards": [
+    {
+      "kind": "motion",
+      "name": "동작 01",
+      "pulses": [
+        800,
+        2000,
+        2000,
+        2000,
+        2000,
+        1500
+      ],
+      "running_time": 1000
+    },
+    {
+      "kind": "buzzer",
+      "name": "부저 01",
+      "frequency": 1000,
+      "running_time": 1000,
+      "continuous": true
+    },
+    {
+      "kind": "led",
+      "name": "LED 01",
+      "red": true,
+      "green": false,
+      "blue": false
+    },
+    {
+      "kind": "motion",
+      "name": "동작 02",
+      "pulses": [
+        2200,
+        800,
+        800,
+        800,
+        800,
+        1500
+      ],
+      "running_time": 1000
+    },
+    {
+      "kind": "buzzer",
+      "name": "부저 02",
+      "frequency": 0,
+      "running_time": 500,
+      "continuous": false
+    },
+    {
+      "kind": "led",
+      "name": "LED 02",
+      "red": false,
+      "green": false,
+      "blue": false
+    }
+  ],
+  "editor": {
+    "next_name_serials": {
+      "motion": 3,
+      "buzzer": 3,
+      "led": 3
+    }
+  },
+  "extensions": {}
+}

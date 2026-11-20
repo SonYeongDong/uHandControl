@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "mapping_reviewed": true,
+  "axes_verified": true,
+  "servo_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "deviations": [
+    0,
+    -30,
+    0,
+    0,
+    -50,
+    0
+  ],
+  "raw_min": 500,
+  "raw_max": 2500,
+  "max_buzzer_hz": 10000,
+  "sdk_path": "/home/pi/uhandpi/common_sdk/common/ros_robot_controller_sdk.py",
+  "sdk_sha256": "6ab046d3fdb78a42a5e49b2b09eed85727ee7976819959df5a552e8eccaf677d",
+  "deviation_path": "/home/pi/uhandpi/config/deviation.yaml",
+  "deviation_sha256": "b0e9fd199c0cb117783235b7a6e1397f9872e3b6d697d4ae68565bebe701479b",
+  "serial_device": "/dev/ttyAMA0"
+}

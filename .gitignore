@@ -1,0 +1,19 @@
+# Local environments and generated files
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+reports/
+.pytest_cache/
+data/local/
+.vscode/
+docs/git-release-plan.md
+
+# Raspberry Pi images are distributed via Google Drive
+*.img
+*.img.zip
+*.img.gz
+*.img.xz
+*.img.7z
