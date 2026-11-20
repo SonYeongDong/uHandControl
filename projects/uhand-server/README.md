@@ -20,3 +20,96 @@ uHandServer는 Hiwonder uHandPi의 Raspberry Pi OS에서 실행되는 실물 제
 배포 기본값은 uHandServer 자동 시작입니다. 이 상태에서 `sudo uhand-mode vendor`로 바꾸면 지금은 제조사 서비스가 실행되고 다음 부팅 때는 uHandServer가 시작됩니다. `--boot`를 함께 지정하면 선택한 서비스가 다음 부팅에도 시작됩니다.
 
 `uhand-mode status` 출력에서 `active/running`은 지금 동작하는 서비스, `boot=enabled`는 다음 부팅 때 시작될 서비스입니다. 모드 전환 스크립트의 장비 내 위치는 `/usr/local/bin/uhand-mode`입니다. 서비스 이름은 각각 `uhand-server.service`와 `uhandpi.service`입니다.
+
+## 서버 소프트웨어만 업데이트하기
+
+이미 이 프로젝트의 SD 이미지로 운용 중이라면, 새 릴리스가 현재 장비와 OS를 지원하는지 릴리스 설명에서 먼저 확인하세요. 아래는 **1.0.0과 같은 폴더 구조와 서비스 설정을 사용하는 후속 버전**의 수동 업데이트 절차입니다. 새 버전을 별도 폴더에 준비하고 점검한 뒤 서비스를 전환하므로 이전 버전으로 되돌릴 수 있습니다.
+
+### 장비에서 어떤 파일을 사용하는가
+
+1.0.0의 실행 기준 폴더는 `/home/pi/uhand-server/releases/1.0.0/`입니다. 현재 서비스가 가리키는 경로는 SSH에서 `systemctl show uhand-server.service -p WorkingDirectory -p ExecStart -p FragmentPath -p DropInPaths`로 확인할 수 있습니다.
+
+| 저장소에서 가져올 파일 | 로봇손에서의 위치와 용도 |
+| --- | --- |
+| `projects/uhand-server/run_server.py` | 버전 폴더의 `run_server.py`. 서버 시작 파일 |
+| `projects/uhand-server/src/uhand_server/` | 버전 폴더의 `src/uhand_server/`. 서버 제어 코드 전체 |
+| `shared/uhand-server-lifecycle/src/uhand_server_lifecycle/` | 아래 절차에서는 **새 버전 폴더**의 `src/uhand_server_lifecycle/`에 함께 설치. 초기화·연결 처리를 담당하는 공통 코드 |
+| `projects/uhand-server/config/hardware-profile.json` | 버전 폴더의 `config/hardware-profile.json`. 장비 매핑과 제조사 파일 검증값 |
+| `projects/uhand-server/systemd/uhand-server.service` | `/etc/systemd/system/uhand-server.service`. 어느 버전을 자동 실행할지 지정 |
+| `projects/uhand-server/tools/uhand_mode.py` | `/usr/local/bin/uhand-mode`. 서비스 전환 도구 자체를 갱신할 때 사용 |
+
+제조사 SDK `/home/pi/uhandpi/common_sdk/common/ros_robot_controller_sdk.py`와 보정 원본 `/home/pi/uhandpi/config/deviation.yaml`은 장비에 보존합니다. 장비별 보정을 변경한 사용자는 새 프로필과 기존 프로필을 비교하고 해당 장비와의 호환성을 먼저 확인하세요.
+
+### 1. Windows에서 새 릴리스 전송
+
+GitHub Releases에서 **설치하려는 버전의 소스 ZIP**을 받아 압축을 풉니다. `projects`와 `shared`가 보이는 최상위 폴더에서 PowerShell을 열고 다음 명령을 차례로 실행합니다. 각 명령이 성공하면 다음 줄로 넘어가세요.
+
+```powershell
+tar.exe -czf "$env:TEMP\uhand-server-update.tar.gz" projects/uhand-server/run_server.py projects/uhand-server/src/uhand_server projects/uhand-server/config/hardware-profile.json projects/uhand-server/systemd/uhand-server.service shared/uhand-server-lifecycle/src/uhand_server_lifecycle
+scp "$env:TEMP\uhand-server-update.tar.gz" pi@192.168.61.1:~/uhand-server-update.tar.gz
+ssh pi@192.168.61.1
+```
+
+### 2. 로봇손에서 새 버전 준비
+
+이제부터는 **SSH로 접속한 로봇손 터미널**에서 실행합니다. 아래 첫 줄의 `X.Y.Z`를 내려받은 릴리스 번호로 바꾸세요. 이 절차는 현재 uHandServer가 실행 중이며 배포 기본 유닛을 사용하는 장비를 대상으로 합니다. 먼저 `uhand-mode status`에서 `uhand-server.service`가 `active/running`인지 확인하세요. 위의 `DropInPaths`에 별도 설정 파일이 표시되면 실행 경로를 재정의하는지 먼저 확인합니다.
+
+```sh
+version='X.Y.Z'
+release="/home/pi/uhand-server/releases/$version"
+(
+  set -eu
+  work=$(mktemp -d)
+  tar -xzf "$HOME/uhand-server-update.tar.gz" -C "$work"
+  source_dir="$work/projects/uhand-server"
+  unit="$source_dir/systemd/uhand-server.service"
+  grep -Fx "WorkingDirectory=$release" "$unit" >/dev/null
+  grep -F "ExecStart=/usr/bin/python3 -B $release/run_server.py " "$unit" | grep -F -- "--profile $release/config/hardware-profile.json" >/dev/null
+  sudo mkdir "$release"
+  sudo install -d "$release/src" "$release/config"
+  sudo install -m 0644 "$source_dir/run_server.py" "$release/run_server.py"
+  sudo cp -R "$source_dir/src/uhand_server" "$work/shared/uhand-server-lifecycle/src/uhand_server_lifecycle" "$release/src/"
+  sudo install -m 0644 "$source_dir/config/hardware-profile.json" "$release/config/hardware-profile.json"
+  sudo install -m 0644 "$unit" "$release/uhand-server.service"
+  cd "$release"
+  /usr/bin/python3 -B -c 'import pathlib, runpy, sys; runpy.run_path("run_server.py"); import uhand_server, uhand_server_lifecycle; root = pathlib.Path.cwd(); assert uhand_server.__version__ == sys.argv[1]; assert all(pathlib.Path(m.__file__).resolve().is_relative_to(root) for m in (uhand_server, uhand_server_lifecycle))' "$version"
+  echo "새 버전 준비 완료"
+)
+```
+
+**‘새 버전 준비 완료’가 표시됐을 때만** 다음 단계로 진행합니다. 버전 폴더가 이미 있거나 서비스 파일의 경로가 다르면 준비 단계가 중단됩니다. 이때 현재 서버는 계속 실행됩니다. 릴리스 번호, 기존 폴더, 해당 버전의 설치 안내를 다시 확인하세요. 마지막 Python 검사에서 실패하면 서버 버전이 다르거나 공통 모듈을 새 폴더 밖에서 읽었을 수 있습니다. 운영 중인 공통 파일을 덮어쓰지 말고 해당 릴리스의 설치 경로를 확인하세요.
+
+### 3. 서비스 전환과 확인
+
+클라이언트에서 실행 중인 동작을 마치고 연결을 해제합니다. 재시작하면 손이 기본 자세로 복귀하므로 움직일 공간을 확보하세요. **같은 SSH 터미널**에서 기존 서비스 파일을 백업하고 새 파일을 적용합니다.
+
+```sh
+(
+  set -eu
+  test ! -e "$release/previous-uhand-server.service"
+  sudo cp -p /etc/systemd/system/uhand-server.service "$release/previous-uhand-server.service"
+  sudo install -m 0644 "$release/uhand-server.service" /etc/systemd/system/uhand-server.service
+  sudo systemctl daemon-reload
+  sudo systemctl restart uhand-server.service
+)
+systemctl show uhand-server.service -p WorkingDirectory -p ActiveState
+uhand-mode status
+```
+
+준비음이 끝난 뒤 `WorkingDirectory`가 새 버전 경로인지, `uhand-mode status`가 `active/running`과 `boot=enabled`를 표시하는지 확인합니다. Windows의 uHandMotionCreator에서 `192.168.61.1:5000`으로 연결하여 상태를 조회하고 LED를 잠시 켰다가 꺼 보세요. 시작 실패 또는 반복 재시작은 `sudo journalctl -u uhand-server.service -b -n 50 --no-pager`로 확인합니다.
+
+### 4. 문제가 있으면 이전 버전으로 복귀
+
+같은 SSH 터미널에서 아래 명령을 실행합니다. 다시 로그인했다면 먼저 `release`를 **이번에 설치한 새 버전 폴더의 전체 경로**로 설정하세요. 그 폴더 안의 백업 유닛이 업데이트 전 실행 경로를 가리킵니다.
+
+```sh
+(
+  set -eu
+  sudo install -m 0644 "$release/previous-uhand-server.service" /etc/systemd/system/uhand-server.service
+  sudo systemctl daemon-reload
+  sudo systemctl restart uhand-server.service
+)
+systemctl show uhand-server.service -p WorkingDirectory -p ActiveState
+```
+
+이전 버전 경로와 `ActiveState=active`를 확인하고 클라이언트를 다시 연결합니다. `uhand-mode vendor`는 제조사 프로그램을 실행하는 명령이므로, **서버 버전 복귀**에는 위의 백업 유닛을 사용하세요.

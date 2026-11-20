@@ -2,6 +2,8 @@
 
 이 이미지는 Hiwonder uHandPi용으로 준비하는 Raspberry Pi OS 배포본입니다. Windows PC에서 microSD 카드에 기록하고 로봇손에 넣으면 uHandServer가 부팅 시 자동으로 시작되도록 구성합니다.
 
+이미 SD 이미지로 사용 중인 로봇손에서 서버 버전만 올리려면 [uHandServer 업데이트 및 이전 버전 복귀](../projects/uhand-server/README.md#서버-소프트웨어만-업데이트하기)를 따르세요.
+
 ## 사용 장비와 주요 사양
 
 | 항목 | 이번 프로젝트에 사용한 장비 |
