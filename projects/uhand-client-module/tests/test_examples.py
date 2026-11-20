@@ -14,8 +14,8 @@ class ExampleTests(unittest.TestCase):
         peer = Peer()
         try:
             result = subprocess.run(
-                [sys.executable, "-B", str(ROOT / "examples" / filename), "--port", str(peer.port)],
-                text=True, capture_output=True, timeout=10,
+                [sys.executable, "-I", "-S", "-B", str(ROOT / "examples" / filename), "--port", str(peer.port)],
+                cwd=Path(sys.executable).parent, text=True, capture_output=True, timeout=10,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             return json.loads(result.stdout), [r["method"] for r in peer.requests]

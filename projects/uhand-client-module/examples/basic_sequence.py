@@ -1,6 +1,13 @@
 """Execute sample outputs on the specified server; localhost is the default."""
 import argparse
 import json
+from pathlib import Path
+import sys
+
+# When run from the repository, use its matching client source.
+source_dir = Path(__file__).resolve().parents[1] / "src"
+if (source_dir / "uhand_client_module" / "__init__.py").is_file():
+    sys.path.insert(0, str(source_dir))
 
 import uhand_client_module as hand
 
@@ -8,7 +15,7 @@ import uhand_client_module as hand
 def main():
     parser = argparse.ArgumentParser(description="Run pulse, buzzer and LED commands on a uHand server.")
     parser.add_argument("--ip", default="127.0.0.1")
-    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--port", type=int, default=5000, help="Server port (default: 5000)")
     args = parser.parse_args()
     try:
         hand.Connect(args.ip, args.port)
