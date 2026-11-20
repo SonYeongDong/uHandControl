@@ -40,3 +40,15 @@ Windows 실행기로 환경을 설치한 뒤 저장소 최상위에서 아래 �
 ```
 
 제조사 SDK 패킷 시험은 장비와 동일한 SDK 파일이 있을 때만 실행합니다. 해당 파일 경로는 환경변수 `UHAND_SDK_TEST_PATH`로 지정할 수 있습니다.
+
+## 프로젝트 팀
+
+<img src="shared/uhand-about/src/uhand_about/inha-horizontal.png" alt="인하대학교 (Inha University)" width="240">
+
+**인하대학교 · 2026 Data Science Team 1**
+
+- 손영동 (Yeong-dong Son)
+- 이민지 (Min-ji Lee)
+- 이상윤 (Sang-yun Lee)
+- 정한결 (Han-gyeol Jeong)
+- 조승준 (Seung-jun Jo)
