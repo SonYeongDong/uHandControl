@@ -1,10 +1,10 @@
 # uHandVirtualServer
 
-실물 로봇손 없이 Windows에서 동작을 시험하는 가상 서버입니다. uHandMotionCreator 또는 Python 클라이언트가 보낸 손동작은 3D 모델로, 부저는 PC 소리로, LED는 화면의 두 램프로 확인합니다.
+실물 로봇손 없이 Windows와 macOS에서 동작을 시험하는 가상 서버입니다. uHandMotionCreator 또는 Python 클라이언트가 보낸 손동작은 3D 모델로, 부저는 PC 소리로, LED는 화면의 두 램프로 확인합니다.
 
 ![왼쪽 3D 손과 오른쪽 연결·부저·LED 패널, 아래의 상태 표와 이벤트 로그](images/overview.png)
 
-**macOS 시험 브랜치** · [Mac에서 설치하고 이 프로그램을 확인하는 방법](../../docs/macos-testing.md)
+**Mac 사용자** · [macOS에서 설치하고 실행하기](../../docs/macos-testing.md)
 
 ## 설치와 실행
 

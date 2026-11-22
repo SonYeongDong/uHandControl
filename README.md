@@ -2,15 +2,12 @@
 
 Hiwonder uHandPi의 손동작·소리·빛을 카드로 만들고, 가상 로봇손에서 확인한 뒤 실제 장비에서 실행하는 Python 프로젝트입니다.
 
-## macOS 시험 브랜치
-
-Mac에서 편집기와 가상 서버를 함께 실행하고 Python 예제로 연결할 수 있도록 준비한 브랜치입니다. 동료의 실기 검증을 기다리고 있습니다. [Mac용 브랜치 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/heads/feature/macos-support.zip) · [설치와 검증 순서](docs/macos-testing.md)
-
 ## 1.0.0 다운로드
 
 | 사용 목적 | 받을 파일 |
 | --- | --- |
 | Windows PC에서 실행 | [프로그램 소스 ZIP (GitHub)](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.0.zip)을 풀고 `run.pyw`를 실행합니다. |
+| Mac에서 실행 | 같은 [프로그램 소스 ZIP (GitHub)](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.0.zip)을 풀고 터미널에서 `python3.13 run.pyw`를 실행합니다. [Mac 설치와 첫 실행](docs/macos-testing.md) |
 | 실물 로봇손의 microSD 카드 준비 | [로봇손 OS 이미지 ZIP (Google Drive)](https://drive.google.com/file/d/1FIJfN0GGV1XN-rRClmctAZMtp2pYu3bc/view)을 풀고 `uHandControl-1.0.0.img`를 카드에 기록합니다. ZIP과 IMG 각각의 SHA-256 및 기록 방법은 [실물 설치 가이드](docs/hardware-setup.md)에 있습니다. |
 
 ## Windows에서 첫 동작 실행하기
@@ -27,9 +24,9 @@ Mac에서 편집기와 가상 서버를 함께 실행하고 Python 예제로 연
 
 | 프로그램 | 환경 | 사용 안내 |
 | --- | --- | --- |
-| uHandMotionCreator | Windows | 카드 편집·저장·재생, 서버 연결, Python 코드 생성. [편집 화면 따라 하기](projects/uhand-motion-creator/README.md) |
-| uHandVirtualServer | Windows | 가상 3D 손, 부저, LED와 이벤트 로그 확인. [가상 서버 화면 따라 하기](projects/uhand-virtual-server/README.md) |
-| uHandClientModule | Windows Python | 함수 여섯 개로 가상·실물 서버 제어. [설치·예제·API 설명](projects/uhand-client-module/README.md) |
+| uHandMotionCreator | Windows · macOS | 카드 편집·저장·재생, 서버 연결, Python 코드 생성. [편집 화면 따라 하기](projects/uhand-motion-creator/README.md) |
+| uHandVirtualServer | Windows · macOS | 가상 3D 손, 부저, LED와 이벤트 로그 확인. [가상 서버 화면 따라 하기](projects/uhand-virtual-server/README.md) |
+| uHandClientModule | Windows · macOS Python | 함수 여섯 개로 가상·실물 서버 제어. [설치·예제·API 설명](projects/uhand-client-module/README.md) |
 | uHandServer | 로봇손의 Raspberry Pi OS | 실물 서보·부저·LED 구동. [서버 사용 및 제조사 서비스 전환](projects/uhand-server/README.md) |
 
 실물을 처음 준비할 때는 microSD 카드 기록, Ethernet 연결과 첫 로그인 순서대로 진행하세요. [실물 설치 가이드와 OS 이미지 배포 정보](docs/hardware-setup.md)

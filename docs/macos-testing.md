@@ -1,11 +1,11 @@
-# Mac에서 uHandControl 시험하기
+# Mac에서 uHandControl 1.0.0 실행하기
 
-이 안내는 `feature/macos-support` 브랜치에 적용됩니다. 가상 서버, 편집기, Python 클라이언트 세 프로그램을 Mac 한 대에서 확인할 수 있습니다. 실물용 uHandServer는 로봇손의 Raspberry Pi OS에서 실행됩니다.
+Mac 실기에서 동작을 확인한 1.0.0 배포판의 설치 방법입니다. 가상 서버, 편집기, Python 클라이언트 세 프로그램을 Mac 한 대에서 확인할 수 있습니다. 실물용 uHandServer는 로봇손의 Raspberry Pi OS에서 실행됩니다.
 
 ## 1. 두 프로그램 열기
 
-1. **준비물**은 macOS 14 이상과 Tkinter가 포함된 일반 64비트 Python 3.13입니다. Qt 6.12의 macOS 설치 파일은 14 이상용입니다. Apple Silicon과 Intel용 패키지가 있으며 실기 검증은 별도로 진행합니다.
-2. [Mac 브랜치 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/heads/feature/macos-support.zip)을 다운로드하고 Finder에서 압축을 풉니다.
+1. **준비물**은 macOS 14 이상과 Tkinter가 포함된 일반 64비트 Python 3.13입니다. Qt 6.12의 macOS 설치 파일은 14 이상용입니다. Apple Silicon과 Intel용 Python 패키지가 제공됩니다.
+2. [Windows·Mac 공용 소스 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.0.zip)을 다운로드하고 Finder에서 압축을 풉니다.
 3. 터미널에서 `cd`와 공백을 입력하고, 압축을 푼 폴더를 터미널로 끌어놓은 뒤 Return을 누릅니다. 다음 명령을 실행합니다.
 
    ```sh
@@ -15,7 +15,7 @@
 4. 실행기에서 **uHandVirtualServer**를 누릅니다. 첫 설치에는 인터넷 연결이 필요합니다. 시작음이 끝나 **연결 대기**가 뜨면 같은 실행기에서 **uHandMotionCreator**를 누릅니다.
 5. 명령을 찾을 수 없거나 Tkinter 오류가 나면 [Python의 macOS 설치본](https://www.python.org/downloads/macos/)에서 Python 3.13 버전을 설치하고 터미널을 다시 엽니다. `python3.13 -m tkinter`로 작은 창이 열리는지 확인합니다. 패키지 설치나 앱 시작 오류는 압축을 푼 폴더의 `build/launcher.log`에 기록됩니다.
 
-## 2. 동료가 확인할 항목
+## 2. 첫 실행에서 기능 확인하기
 
 | 확인할 동작 | 기대 결과 |
 | --- | --- |
@@ -34,7 +34,7 @@
 
 가상 손이 1부터 5까지 세고, 부저가 울리고, 두 LED가 초록색으로 켜집니다. 터미널에 마지막 상태가 출력됩니다. 클라이언트 예제만 실행할 때는 Python 3.10 이상에서 예제 옆의 프로젝트 소스를 사용할 수 있습니다.
 
-## 3. 결과 기록
+## 3. 개발자 테스트 및 문제 보고
 
 같은 설치 환경에서 회귀 테스트와 두 GUI의 통합 시험도 실행할 수 있습니다. GUI 시험에서는 창이 잠시 열리고 알림음이 들립니다.
 
