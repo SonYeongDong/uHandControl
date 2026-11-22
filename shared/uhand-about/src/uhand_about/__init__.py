@@ -8,6 +8,16 @@ from PySide6.QtWidgets import (
 )
 
 
+def product_logo(parent, size, object_name):
+    mark = QLabel(parent)
+    mark.setObjectName(object_name)
+    mark.setFixedSize(size, size)
+    mark.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    mark.setAccessibleName(parent.windowTitle())
+    mark.setPixmap(parent.windowIcon().pixmap(mark.size(), mark.devicePixelRatioF()))
+    return mark
+
+
 class AboutDialog(QDialog):
     def __init__(self, parent, name, description, version, logo_color="#245eea"):
         super().__init__(parent)
@@ -19,7 +29,7 @@ class AboutDialog(QDialog):
             QLabel#product { font-size: 26px; font-weight: 700; }
             QLabel#team { font-size: 20px; font-weight: 650; }
             QLabel#secondary { color: #556a82; }
-            QLabel#mark { color: white; border-radius: 13px;
+            QLabel#mark { color: white; border: 1px solid #cbd5e1; border-radius: 13px;
                           font-size: 34px; font-weight: 700; }
             QFrame#roster { background: #f4f7fc; border-radius: 8px; }
             QLabel#rosterTitle { color: #526681; font-size: 13px; font-weight: 600; }
@@ -34,11 +44,13 @@ class AboutDialog(QDialog):
         layout.setSpacing(18)
         header = QHBoxLayout()
         header.setSpacing(16)
-        mark = QLabel("U")
-        mark.setObjectName("mark")
-        mark.setStyleSheet(f"background-color: {logo_color};")
-        mark.setFixedSize(62, 62)
-        mark.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        mark = product_logo(parent, 62, "mark")
+        if parent.windowIcon().isNull():
+            mark.setText("U")
+            mark.setStyleSheet(f"background-color: {logo_color};")
+        else:
+            mark.setStyleSheet("border: none; background: transparent;")
+        mark.setAccessibleName(name)
         header.addWidget(mark)
         titles = QVBoxLayout()
         titles.setSpacing(3)

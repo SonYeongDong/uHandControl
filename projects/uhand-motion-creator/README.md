@@ -4,10 +4,10 @@ Windows와 macOS에서 로봇손의 동작을 만들고 재생하는 편집기�
 
 ## 설치와 실행
 
-[Windows·Mac 공용 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.0.zip)을 풀고, `run.pyw`가 있는 폴더에서 실행기를 엽니다.
+프로그램 소스 ZIP을 푼 폴더에서 `uHandControlLauncher.pyw`를 엽니다. [다운로드 및 운영체제별 실행 방법](../../README.md#101-다운로드)
 
-- **Windows** — `run.pyw`를 더블클릭합니다. PowerShell에서는 `python run.pyw`로 열 수 있습니다.
-- **macOS** — 터미널에서 `python3.13 run.pyw`를 실행합니다. [Mac 설치 안내](../../docs/macos-testing.md)
+- **Windows** — `uHandControlLauncher.pyw`를 더블클릭합니다. PowerShell에서는 `python uHandControlLauncher.pyw`로 열 수 있습니다.
+- **macOS** — 터미널에서 `python3.13 uHandControlLauncher.pyw`를 실행합니다. [Mac 설치 안내](../../docs/macos-testing.md)
 
 실행기에서 **uHandMotionCreator**를 선택하면 카드 편집을 시작할 수 있습니다. 가상 로봇손에 연결할 때는 **uHandVirtualServer**를 먼저 열고 **연결 대기**를 확인하세요. 첫 실행에 필요한 패키지는 자동으로 설치됩니다. [처음 실행하기](../../README.md)
 
@@ -24,6 +24,8 @@ Windows와 macOS에서 로봇손의 동작을 만들고 재생하는 편집기�
 ![부저 탭에서 주파수와 시간, 연속 재생을 지정하는 화면](images/buzzer.png)
 
 **부저** 탭에서 주파수를 `1000 Hz`, 시간을 `250 ms`로 입력하고 **연속 재생**을 해제합니다. **소리 미리듣기**로 짧은 음을 들어본 뒤 **+ 동작 추가**를 누릅니다. 연속 재생을 선택하면 다음 부저 명령까지 소리가 유지됩니다. `0 Hz` 부저 카드로 무음으로 전환할 수 있습니다.
+
+1.0.1에서는 편집기를 사용하는 동안 오디오 출력을 무음으로 준비해 둡니다. 한동안 소리를 재생하지 않았다가 **소리 미리듣기**를 눌렀을 때 첫 음의 시작 부분이 잘리던 현상을 줄였습니다.
 
 ![삼색 LED 탭의 기본 색상, RGB 슬라이더, 전체 밝기와 출력색](images/led.png)
 

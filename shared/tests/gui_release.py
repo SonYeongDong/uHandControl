@@ -46,7 +46,7 @@ def main():
             with patch.object(QFileDialog, "getOpenFileName", return_value=(str(path), "")):
                 assert creator.open_document()
             assert creator.sequence.items[0].pulses[1] == 1800
-            legacy = ROOT / "projects/uhand-motion-creator/examples/sequences/mixed-demo.uhand.json"
+            legacy = ROOT / "projects/uhand-motion-creator/examples/sequences/mixed-demo.uhjson"
             with patch.object(QFileDialog, "getOpenFileName", return_value=(str(legacy), "")):
                 assert creator.open_document()
             with patch.object(creator, "choose_save_path", return_value=path):

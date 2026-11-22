@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uhand-client-module"
-version = "1.0.0"
+version = "1.0.1"
 description = "Synchronous Python client for the uHand robot hand protocol"
 readme = "README.md"
 requires-python = ">=3.10"

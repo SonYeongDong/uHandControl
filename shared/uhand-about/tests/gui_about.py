@@ -1,13 +1,17 @@
 """Exercise each installed app's About action in its own Windows environment."""
-import sys
+import argparse
 from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 from PySide6.QtTest import QTest
 from uhand_about import AboutDialog
 
+parser = argparse.ArgumentParser()
+parser.add_argument("name", choices=("uHandMotionCreator", "uHandVirtualServer"))
+parser.add_argument("--output-dir", type=Path, help="Optionally save the dialog screenshot here")
+args = parser.parse_args()
 app = QApplication([])
-name = sys.argv[1]
+name = args.name
 if name == "uHandMotionCreator":
     from uhand_motion_creator.ui import MainWindow
     from uhand_motion_creator import __version__
@@ -34,7 +38,7 @@ try:
     action.trigger()
     assert window.findChildren(AboutDialog) == [dlg]
     labels = dlg.findChildren(QLabel)
-    assert {name, "v"+__version__, "U", "Developed by", "2026 Data Science Team 1", "Inha University"} <= {w.text() for w in labels}
+    assert {name, "v"+__version__, "Developed by", "2026 Data Science Team 1", "Inha University"} <= {w.text() for w in labels}
     members = sorted(dlg.findChildren(QLabel, "member"), key=lambda w: (w.y(), w.x()))
     assert [w.text() for w in members] == [
         "손영동 (Yeong-dong Son)", "이민지 (Min-ji Lee)", "이상윤 (Sang-yun Lee)",
@@ -42,6 +46,7 @@ try:
     ]
     expected = "#cc3344" if name == "uHandVirtualServer" else "#245eea"
     for mark in (window.findChild(QLabel, "appLogo"), dlg.findChild(QLabel, "mark")):
+        assert not mark.pixmap().isNull()
         image = mark.grab().toImage()
         assert image.pixelColor(8, image.height()//2).name() == expected
     logo = dlg.findChild(QLabel,"universityLogo")
@@ -58,8 +63,11 @@ try:
             assert dlg.isVisible() and client.GetStatus()["LED"] == [255,0,255]
         finally:
             client.Disconnect()
-    out = Path(__file__).resolve().parents[3]/"reports/about-design"
-    assert dlg.grab().save(str(out/(name+"-installed.png")))
+    shot = dlg.grab()
+    assert not shot.isNull()
+    if args.output_dir is not None:
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        assert shot.save(str(args.output_dir / (name + "-installed.png")))
     QTest.keyClick(dlg,Qt.Key.Key_Escape)
     assert not dlg.isVisible()
     action.trigger()

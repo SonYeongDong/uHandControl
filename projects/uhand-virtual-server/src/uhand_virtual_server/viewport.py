@@ -52,6 +52,16 @@ class HandViewport(QWidget):
     def eventFilter(self,watched,event):
         if watched is self.canvas.native:
             kind=event.type()
+            if kind == QEvent.Type.Wheel:
+                steps = max(-100, min(100, event.angleDelta().y() / 120.0))
+                self.zoom(1.1 ** -steps)
+                event.accept()
+                return True
+            if (kind == QEvent.Type.NativeGesture
+                    and event.gestureType() == Qt.NativeGestureType.ZoomNativeGesture):
+                self.zoom(1.0 - event.value())
+                event.accept()
+                return True
             if kind in (QEvent.Type.MouseButtonPress,QEvent.Type.MouseButtonDblClick) and event.button()==Qt.MouseButton.RightButton:
                 camera=self.view.camera
                 self._orbit=(event.position(),camera.azimuth,camera.elevation)

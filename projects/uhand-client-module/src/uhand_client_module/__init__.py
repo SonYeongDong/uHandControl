@@ -10,7 +10,7 @@ from .errors import (
     RemoteError, BusyError, DeviceError, UnsupportedFrequencyError,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __all__ = [
     "Connect", "Disconnect", "SetuHandPulse", "SetuHandBuzzer", "SetuHandLED", "GetStatus",
     "UHandError", "InputValidationError", "NotConnectedError", "AlreadyConnectedError",

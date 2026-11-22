@@ -2,10 +2,14 @@
 import ctypes
 import io
 import math
+from functools import lru_cache
 import wave
 import numpy as np
 
 SAMPLE_RATE=48000
+
+# Half a second of 48 kHz, mono, signed 16-bit silence, looped by the device.
+IDLE_PCM = bytes(SAMPLE_RATE)
 WHDR_DONE = 0x00000001
 
 def make_pcm(frequency,duration,rate=48000,channels=1,sample_format="Int16",fade_edges=True):
@@ -68,10 +72,19 @@ class WaveDevice:
     def unprepare(self,handle,header):self.check(self.dll.waveOutUnprepareHeader(handle,ctypes.byref(header),ctypes.sizeof(header)))
     def close(self,handle):self.check(self.dll.waveOutClose(handle))
 
+@lru_cache(maxsize=8)
+def continuous_pcm(frequency):
+    # One second contains an integer number of cycles at every supported integer Hz.
+    # Let the audio driver loop it; Python scheduling cannot leave gaps between blocks.
+    return make_pcm(frequency, 1000, fade_edges=False)
+
 class WindowsAudio:
     """Open at app startup without sound; play/stop never reopen the device."""
     def __init__(self,device=None):
         self._device=device;self._handle=None;self._buffer=None;self._header=None;self._prepared=False
+        self._loop_frequency = None
+        self._keep_warm = False
+        self._idle = False
         try:self._open()
         except (OSError,RuntimeError):pass  # Editing still works without speakers.
     def _open(self):
@@ -79,14 +92,19 @@ class WindowsAudio:
         if self._handle is None:self._handle=self._device.open()
     def play(self,frequency,duration,continuous=False):
         if type(continuous) is not bool:raise ValueError("Continuous must be bool")
-        data=make_pcm(frequency,1000 if continuous else duration,fade_edges=not continuous)
+        if type(frequency) is not int or not 0 <= frequency <= 10000:
+            raise ValueError("Frequency must be an integer in 0..10000")
         if frequency == 0:
             self.stop()
-            return
-        self.play_pcm(data, continuous)
+        elif continuous:
+            if self._loop_frequency != frequency:
+                self.play_pcm(continuous_pcm(frequency), continuous=True)
+                self._loop_frequency = frequency
+        else:
+            self.play_pcm(make_pcm(frequency, duration))
 
     def play_pcm(self, data, continuous=False):
-        self.stop()
+        self._release_buffer()
         self._open()
         self._buffer=ctypes.create_string_buffer(data)
         self._header=WaveHeader(ctypes.cast(self._buffer,ctypes.c_void_p),len(data),0,0,12 if continuous else 0,0xFFFFFFFF if continuous else 0,None,0)
@@ -94,18 +112,34 @@ class WindowsAudio:
             self._device.prepare(self._handle,self._header);self._prepared=True
             self._device.write(self._handle,self._header)
         except (OSError,RuntimeError):
-            self.stop();raise
+            self._release_buffer();raise
     def playback_done(self):
         return self._prepared and bool(self._header.flags & WHDR_DONE)
 
+    def enable_idle_output(self):
+        self._keep_warm = True
+        self.stop()
+
     def stop(self):
+        if self._keep_warm:
+            if not self._idle:
+                self.play_pcm(IDLE_PCM, continuous=True)
+                self._idle = True
+        else:
+            self._release_buffer()
+
+    def _release_buffer(self):
+        self._loop_frequency = None
         if self._prepared:
             # Keep memory alive if the driver fails to return/unprepare the buffer.
             if not self.playback_done():
                 self._device.reset(self._handle)
             self._device.unprepare(self._handle,self._header)
         self._prepared=False;self._header=None;self._buffer=None
+        self._idle = False
+
     def close(self):
-        self.stop()
+        self._keep_warm = False
+        self._release_buffer()
         if self._handle is not None:
             self._device.close(self._handle);self._handle=None

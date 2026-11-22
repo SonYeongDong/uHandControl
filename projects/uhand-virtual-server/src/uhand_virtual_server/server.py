@@ -95,6 +95,12 @@ class Connection:
             self.server.release(self)
 
 
+def interpolate_pose(motion, now):
+    source, target, start, duration = motion
+    fraction = max(0.0, min(1.0, (now - start) / duration))
+    return [a + (b - a) * fraction for a, b in zip(source, target)]
+
+
 class VirtualServer:
     def __init__(self, host="127.0.0.1", port=5000, audio=None):
         self.address = validate_bind(host, port)
@@ -164,7 +170,9 @@ class VirtualServer:
         self.output_done.wait()
         try:
             with self.lifecycle.serial:
-                if hasattr(self.audio, "stop"):
+                if hasattr(self.audio, "close"):
+                    self.audio.close()
+                elif hasattr(self.audio, "stop"):
                     self.audio.stop()
         finally:
             self.accept_thread.join()
@@ -299,9 +307,12 @@ class VirtualServer:
             if method == "SetuHandPulse":
                 target = [params[name] for name in PULSE_NAMES]
                 with self.lock:
-                    self.motion = (list(self.display), target, time.monotonic(), duration)
-                if self.abort_output.wait(duration):
-                    raise CommandError("DEVICE_ERROR", "Server stopped before completion.")
+                    started = time.monotonic()
+                    self.motion = (self._display_at(started), target, started, duration)
+                deadline = started + duration
+                while (remaining := deadline - time.monotonic()) > 0:
+                    if self.abort_output.wait(remaining):
+                        raise CommandError("DEVICE_ERROR", "Server stopped before completion.")
                 with self.lock:
                     self.display = list(target)
                     self.motion = None
@@ -353,12 +364,11 @@ class VirtualServer:
             connection.send(rid, error=error)
 
     def _home_outputs(self):
-        if hasattr(self.audio, "stop"):
+        if self.lifecycle.phase == "startup" and hasattr(self.audio, "enable_idle_output"):
+            self.audio.enable_idle_output()
+        elif hasattr(self.audio, "stop"):
             self.audio.stop()
-        self._notice_note_index = None
-        if hasattr(self.audio, "prime_notice"):
-            self.audio.prime_notice(HOME_MS)
-            self._notice_note_index = 0
+        self._notice_note_index = 0 if hasattr(self.audio, "play_notice_note") else None
         with self.lock:
             now = time.monotonic()
             self.motion = (self._display_at(now), [1500] * 6, now, HOME_MS / 1000)
@@ -388,9 +398,7 @@ class VirtualServer:
     def _display_at(self, now):
         if self.motion is None:
             return list(self.display)
-        source, target, start, duration = self.motion
-        amount = max(0, min(1, (now - start) / duration))
-        return [a + (b - a) * amount for a, b in zip(source, target)]
+        return interpolate_pose(self.motion, now)
 
     def snapshot(self):
         with self.lock:

@@ -37,11 +37,11 @@ uHandServer는 Hiwonder uHandPi의 Raspberry Pi OS에서 실행되는 실물 제
 
 ## 서버 소프트웨어만 업데이트하기
 
-이미 이 프로젝트의 SD 이미지로 운용 중이라면, 새 릴리스가 현재 장비와 OS를 지원하는지 릴리스 설명에서 먼저 확인하세요. 아래는 **1.0.0과 같은 폴더 구조와 서비스 설정을 사용하는 후속 버전**의 수동 업데이트 절차입니다. 새 버전을 별도 폴더에 준비하고 점검한 뒤 서비스를 전환하므로 이전 버전으로 되돌릴 수 있습니다.
+이미 이 프로젝트의 SD 이미지로 운용 중이라면, 새 릴리스가 현재 장비와 OS를 지원하는지 릴리스 설명에서 먼저 확인하세요. 아래는 **1.0.0과 같은 폴더 구조와 서비스 설정을 사용하는 후속 버전**의 수동 업데이트 절차입니다. 이전 릴리스 폴더는 보관하고 새 버전을 별도 폴더에 설치합니다. 3단계에서는 서비스가 원래 어느 폴더를 실행했는지 기록한 설정 파일도 백업합니다.
 
 ### 장비에서 어떤 파일을 사용하는가
 
-1.0.0의 실행 기준 폴더는 `/home/pi/uhand-server/releases/1.0.0/`입니다. 현재 서비스가 가리키는 경로는 SSH에서 `systemctl show uhand-server.service -p WorkingDirectory -p ExecStart -p FragmentPath -p DropInPaths`로 확인할 수 있습니다.
+1.0.1의 실행 기준 폴더는 `/home/pi/uhand-server/releases/1.0.1/`입니다. 1.0.0 배포 이미지에서는 같은 위치의 `1.0.0/` 폴더를 사용합니다. 현재 서비스가 가리키는 경로는 SSH에서 `systemctl show uhand-server.service -p WorkingDirectory -p ExecStart -p FragmentPath -p DropInPaths`로 확인할 수 있습니다.
 
 | 저장소에서 가져올 파일 | 로봇손에서의 위치와 용도 |
 | --- | --- |
@@ -125,12 +125,18 @@ uhand-mode status
 
 ### 4. 문제가 있으면 이전 버전으로 복귀
 
-같은 SSH 터미널에서 아래 명령을 실행합니다. 다시 로그인했다면 먼저 `release`를 **이번에 설치한 새 버전 폴더의 전체 경로**로 설정하세요. 그 폴더 안의 백업 유닛이 업데이트 전 실행 경로를 가리킵니다.
+이 절차는 **수동 업데이트 직전의 릴리스 폴더**와 **3단계에서 만든 `previous-uhand-server.service`**가 모두 있는 장비에 적용합니다. 1.0.1 이미지 제작용 로봇손에는 1.0.1만 설치되어 있어, 아래 명령으로 1.0.0에 복귀할 수 없습니다. 현재 배포하는 1.0.1 이미지를 새 카드에 기록하는 방법은 [이미지와 카드 준비](../../docs/hardware-setup.md#1-이미지와-카드-준비)에서 확인하세요.
+
+수동 업데이트를 진행한 SSH 터미널에서 아래 명령을 실행합니다. 다시 로그인했다면 먼저 `release`에 이번에 설치한 새 버전 폴더의 전체 경로를 지정하세요.
 
 ```sh
 (
   set -eu
-  sudo install -m 0644 "$release/previous-uhand-server.service" /etc/systemd/system/uhand-server.service
+  backup="$release/previous-uhand-server.service"
+  test -f "$backup" || { echo "이전 서비스 설정 백업이 없습니다."; exit 1; }
+  previous=$(sed -n 's/^WorkingDirectory=//p' "$backup")
+  test -n "$previous" && test -f "$previous/run_server.py" || { echo "이전 릴리스의 실행 파일을 찾을 수 없습니다."; exit 1; }
+  sudo install -m 0644 "$backup" /etc/systemd/system/uhand-server.service
   sudo systemctl daemon-reload
   sudo systemctl restart uhand-server.service
 )

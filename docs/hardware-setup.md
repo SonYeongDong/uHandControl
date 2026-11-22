@@ -19,14 +19,16 @@
 
 ## 1. 이미지와 카드 준비
 
+ZIP을 내려받아 압축을 풀면 **uHandControl-1.0.1.img**가 나옵니다. 아래 SHA-256으로 다운로드한 ZIP과 카드에 기록할 IMG를 각각 확인할 수 있습니다.
+
 | 항목 | 배포 정보 |
 | --- | --- |
-| 대상 서버 | uHandServer 1.0.0 |
-| 다운로드 | [로봇손 SD 카드 이미지 ZIP 받기 (Google Drive)](https://drive.google.com/file/d/1FIJfN0GGV1XN-rRClmctAZMtp2pYu3bc/view) |
-| 다운로드한 ZIP | `uHandControl-1.0.0.zip` · 3,803,557,773바이트 |
-| ZIP의 SHA-256 | `BD4CEFB9F285501A5C61DD47E90E3EEB353B592313D1170080719BAD49AC1EF6` |
-| 압축을 푼 IMG | `uHandControl-1.0.0.img` · 31,266,439,168바이트 |
-| IMG의 SHA-256 | `FCCD13E676E93DC063BAC53B06AA4D49C2473D82EDF6400F2129C14C0C4A781F` |
+| 대상 서버 | uHandServer 1.0.1 |
+| 다운로드 | [로봇손 SD 카드 이미지 ZIP 받기 (Google Drive)](https://drive.google.com/file/d/1L85k0Egico9ijK62MaR7uK4jhVI6I-Tf/view?usp=sharing) |
+| 다운로드한 ZIP | `uHandControl-1.0.1.zip` · 3,797,110,300바이트 |
+| ZIP의 SHA-256 | `F70DD3A712F302C12C11212FAE9DF115FE5CCDCE631B8D3908FE795F92E4E2FC` |
+| 압축을 푼 IMG | `uHandControl-1.0.1.img` · 31,266,439,168바이트 |
+| IMG의 SHA-256 | `999B2B3FCD2CFD9FD51601034EAC5CE0973F2980AC235E328758913EC6D27F67` |
 
 준비물은 Windows PC, microSD 카드 리더기, 내용을 지워도 되는 32 GB microSD 카드, Ethernet 케이블입니다. 같은 32 GB 제품이라도 실제 용량이 다를 수 있습니다. 대상 카드의 바이트 수가 압축 해제한 이미지 크기 이상이어야 전체 이미지를 기록할 수 있습니다.
 
@@ -35,13 +37,13 @@
 1. 위 표의 **Google Drive**에서 ZIP을 내려받고 다운로드 폴더에서 PowerShell을 엽니다. 아래 첫 명령의 결과를 표의 **ZIP의 SHA-256**과 비교합니다. 값이 일치하면 압축을 풀고 두 번째 명령으로 **IMG의 SHA-256**도 확인합니다. IMG를 다른 폴더에 풀었다면 해당 위치에서 두 번째 명령을 실행하세요.
 
    ```powershell
-   Get-FileHash -Algorithm SHA256 -LiteralPath ".\uHandControl-1.0.0.zip"
-   Get-FileHash -Algorithm SHA256 -LiteralPath ".\uHandControl-1.0.0.img"
+   Get-FileHash -Algorithm SHA256 -LiteralPath ".\uHandControl-1.0.1.zip"
+   Get-FileHash -Algorithm SHA256 -LiteralPath ".\uHandControl-1.0.1.img"
    ```
 
    해시가 다르면 카드에 기록하기 전에 다운로드 또는 압축 해제를 다시 진행하세요.
 2. 대상 카드를 PC에 꽂고 Windows 탐색기에서 드라이브 문자를 확인합니다. **Write를 누르면 선택한 카드의 기존 내용이 덮어써집니다.**
-3. Win32 Disk Imager에서 **Image File**에 압축을 푼 `uHandControl-1.0.0.img`를, **Device**에 대상 카드의 드라이브 문자를 지정합니다. 두 항목을 다시 확인하고 **Write**를 누릅니다. [Win32 Disk Imager 공식 배포처](https://sourceforge.net/projects/win32diskimager/)
+3. Win32 Disk Imager에서 **Image File**에 압축을 푼 `uHandControl-1.0.1.img`를, **Device**에 대상 카드의 드라이브 문자를 지정합니다. 두 항목을 다시 확인하고 **Write**를 누릅니다. [Win32 Disk Imager 공식 배포처](https://sourceforge.net/projects/win32diskimager/)
 4. 완료 메시지가 나오면 카드를 안전하게 꺼냅니다. 전원이 꺼진 로봇손에 카드를 넣고 PC와 로봇손을 Ethernet 케이블로 연결한 뒤 전원을 켭니다. 손이 초기 자세로 돌아가고 준비음이 끝날 때까지 기다립니다.
 
 ## 3. 첫 로그인과 제어 연결
@@ -59,7 +61,7 @@
 1. PC와 로봇손을 직접 연결한다면 PC **Ethernet 어댑터**의 IPv4 주소를 예를 들어 `192.168.61.2`, 서브넷 마스크를 `255.255.255.0`으로 설정합니다. 이 직결 구성에서는 게이트웨이와 DNS를 비워 둘 수 있습니다.
 2. Windows PowerShell에서 `ssh -p 22 pi@192.168.61.1`로 접속합니다. 위의 초기 비밀번호로 로그인합니다. 자신의 장비에서 비밀번호 변경을 원하면 `passwd`를 실행합니다. `pi`는 `sudo`로 장비를 관리할 수 있는 계정입니다.
 3. SSH 창에서 `uhand-mode status`를 실행합니다. 기본 구성에서는 `uhand-server.service` 줄에 `active/running`과 `boot=enabled`가 표시됩니다.
-4. Windows의 uHandMotionCreator에서 **서버 연결·테스트**를 열고 IP `192.168.61.1`, 포트 `5000`으로 연결합니다. 연결 초기화와 연결음이 끝나면 LED 색상을 적용해 실물 두 LED가 함께 바뀌는지 확인할 수 있습니다.
+4. Windows 또는 macOS의 uHandMotionCreator에서 **서버 연결·테스트**를 열고 IP `192.168.61.1`, 포트 `5000`으로 연결합니다. 연결 초기화와 연결음이 끝나면 LED 색상을 적용해 실물 두 LED가 함께 바뀌는지 확인할 수 있습니다.
 
 ## 4. 제조사 튜토리얼 실행과 프로젝트 복귀
 
@@ -90,5 +92,6 @@
 - 운영 중인 실물 장비도 위 표와 같은 비밀번호를 유지합니다. 이 주소로 SSH 접속할 수 있는 사람은 공개된 계정으로 로그인하고 `sudo`를 사용할 수 있으므로 실습 PC와 로봇손을 Ethernet으로 직접 연결해 사용합니다.
 - 원본 카드를 보존하고 배포용 카드를 준비합니다. 개인 SSH 인증 키·허용 키, 토큰, 개인 파일·로그와 삭제된 데이터가 전체 디스크 이미지에 포함되지 않도록 정리합니다. SSH 호스트 키는 복제 장비마다 첫 부팅에서 새로 생성되는지 확인합니다. 제조사 소프트웨어 등 이미지에 포함한 파일의 재배포 조건도 확인합니다.
 - 로봇손을 정상 종료한 뒤 배포용 카드를 PC에 연결합니다. Win32 Disk Imager의 **Device**에서 원본이 될 배포용 카드를 선택하고 **Image File**에 새 파일 경로를 지정한 뒤 **Read**로 추출합니다.
-- 추출본을 별도의 32 GB 카드에 **Write**로 복원합니다. 첫 부팅, 초기 비밀번호 로그인, 서버 자동 시작, 실물 LED 제어, 제조사 서비스 일시 전환 및 서버 복귀를 확인합니다.
-- 검증한 파일을 Google Drive에 보기·다운로드 권한으로 공유합니다. 로그인하지 않은 브라우저에서도 다운로드 가능한지 확인하고, 위 표에 링크와 파일명, SHA-256, 압축 해제한 바이트 수, 시험한 카드를 기록합니다. Git에는 가이드와 다운로드 정보만 관리합니다.
+- 1.0.1 추출본을 별도의 32 GB 카드에 **Write**로 복원한 뒤, LAN 케이블을 뽑은 상태에서 전원을 켭니다. **도 → 미 → 솔**은 uHandServer 초기화가 끝났다는 신호입니다. 준비음이 끝나면 케이블을 연결하고, 재부팅 없이 `192.168.61.1:5000`에 접속해 상태를 조회합니다.
+- 복원한 카드에서 초기 비밀번호 로그인, 서버 자동 시작, 실물 LED 제어, 제조사 서비스 일시 전환 및 서버 복귀도 확인합니다.
+- 검증한 파일을 Google Drive에 보기·다운로드 권한으로 공유합니다. 로그인하지 않은 브라우저에서도 다운로드 가능한지 확인하고, 위 표에 공유 링크와 시험한 카드를 기록합니다. ZIP과 압축 해제한 IMG 각각의 파일명, 바이트 수, SHA-256을 새 파일에서 확인해 함께 갱신합니다. Git에는 가이드와 다운로드 정보만 관리합니다.

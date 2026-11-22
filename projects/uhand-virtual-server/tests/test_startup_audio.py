@@ -67,7 +67,8 @@ class StartupAudioTests(unittest.TestCase):
         (start, _, silence), (onset, header, pcm) = self.device.buffers[-2:]
         self.assertEqual(silence, bytes(SAMPLE_RATE))
         self.assertGreaterEqual(onset - start, .49)
-        self.assertLess(onset - start, .85)
+        if phase == "startup":
+            self.assertLess(onset - start, .85)
         self.assert_melody(pcm, notes)
         time.sleep((len(notes) - 1) * .25 + .22)
         self.assertEqual(self.server.snapshot()["phase"], phase)
@@ -90,7 +91,11 @@ class StartupAudioTests(unittest.TestCase):
             with client.makefile("rb") as reader:
                 self.assertTrue(json.loads(reader.readline())["ok"])
         self.finish_transition("disconnect", (440, 370, 294))
-        self.assertEqual(len(self.device.buffers), 6)
+        # One power-on idle buffer and one return to idle after each melody.
+        self.assertEqual(len(self.device.buffers), 7)
+        for _, header, pcm in self.device.buffers[::2]:
+            self.assertFalse(any(pcm))
+            self.assertEqual(header.flags & 12, 12)
 
     def test_cold_start_waits_for_home_and_driver_completion(self):
         self.server.start(background=True)
@@ -113,7 +118,8 @@ class StartupAudioTests(unittest.TestCase):
         self.assertIsNone(self.server.lifecycle.phase)
         self.assertFalse(self.server.lifecycle.error)
         self.assertNotIn(header, self.device.reset_headers)
-        self.assertEqual(len(self.device.buffers), 2)
+        self.assertEqual(len(self.device.buffers), 3)
+        self.assertFalse(any(self.device.buffers[-1][2]))
 
     def test_power_cut_during_prime_and_melody_then_restart(self):
         self.server.start(background=True)

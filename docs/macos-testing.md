@@ -1,19 +1,25 @@
-# Mac에서 uHandControl 1.0.0 실행하기
+# Mac에서 uHandControl 실행하기
 
-Mac 실기에서 동작을 확인한 1.0.0 배포판의 설치 방법입니다. 가상 서버, 편집기, Python 클라이언트 세 프로그램을 Mac 한 대에서 확인할 수 있습니다. 실물용 uHandServer는 로봇손의 Raspberry Pi OS에서 실행됩니다.
+1.0.0 배포판은 Mac 실기에서 동작을 확인했습니다. 1.0.1 소스에는 전용 앱 번들이 추가됐으며, 새 아이콘과 이름이 Dock과 활성 상태 보기에 표시되는지는 Mac 실기 확인을 앞두고 있습니다. 가상 서버, 편집기, Python 클라이언트 세 프로그램을 Mac 한 대에서 확인할 수 있습니다. 실물용 uHandServer는 로봇손의 Raspberry Pi OS에서 실행됩니다.
 
 ## 1. 두 프로그램 열기
 
 1. **준비물**은 macOS 14 이상과 Tkinter가 포함된 일반 64비트 Python 3.13입니다. Qt 6.12의 macOS 설치 파일은 14 이상용입니다. Apple Silicon과 Intel용 Python 패키지가 제공됩니다.
-2. [Windows·Mac 공용 소스 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.0.zip)을 다운로드하고 Finder에서 압축을 풉니다.
-3. 터미널에서 `cd`와 공백을 입력하고, 압축을 푼 폴더를 터미널로 끌어놓은 뒤 Return을 누릅니다. 다음 명령을 실행합니다.
-
-   ```sh
-   python3.13 run.pyw
-   ```
+2. [1.0.1 Windows·Mac 공용 소스 ZIP](https://github.com/SonYeongDong/uHandControl/archive/refs/tags/v1.0.1.zip)을 다운로드하고 Finder에서 압축을 풉니다.
+3. 터미널에서 `cd`와 공백을 입력하고, 프로젝트 폴더를 터미널로 끌어놓은 뒤 Return을 누릅니다. 이어서 `python3.13 uHandControlLauncher.pyw`를 실행합니다.
 
 4. 실행기에서 **uHandVirtualServer**를 누릅니다. 첫 설치에는 인터넷 연결이 필요합니다. 시작음이 끝나 **연결 대기**가 뜨면 같은 실행기에서 **uHandMotionCreator**를 누릅니다.
 5. 명령을 찾을 수 없거나 Tkinter 오류가 나면 [Python의 macOS 설치본](https://www.python.org/downloads/macos/)에서 Python 3.13 버전을 설치하고 터미널을 다시 엽니다. `python3.13 -m tkinter`로 작은 창이 열리는지 확인합니다. 패키지 설치나 앱 시작 오류는 압축을 푼 폴더의 `build/launcher.log`에 기록됩니다.
+
+### 1.0.1 소스에서 Dock과 활성 상태 보기 확인하기
+
+`python3.13 uHandControlLauncher.pyw`로 시작하면 런처와 여기서 여는 두 프로그램은 각각 자기 이름과 아이콘을 가진 macOS 앱으로 실행됩니다. 처음 열 때 프로젝트의 `build/macos-apps/` 아래에 이 Mac의 Python과 연결된 앱이 만들어집니다. 다른 Mac으로 프로젝트를 옮길 때는 새 위치에서 런처 명령을 다시 실행하세요.
+
+1. Dock에서 런처의 남색 U, 편집기의 파란 U, 가상 서버의 빨간 U를 확인합니다.
+2. **활성 상태 보기**에서 `uHand`를 검색합니다. 런처는 `uHandControlLauncher`, 편집기는 `uHandMotionCreator`, 가상 서버는 `uHandVirtualServer`로 표시되는지 확인합니다.
+3. 편집기를 두 번 열어 두 프로세스의 PID가 다른지 확인합니다. 런처만 닫았다가 다시 열면 편집기 버튼에 2개가 표시되고, 편집기 하나를 닫으면 1개로 줄어야 합니다.
+
+이 실행 방식은 프로젝트에 포함한 [py2app](https://pypi.org/project/py2app/0.28.10/)의 Apple Silicon·Intel 공용 실행기와 기존 Python을 사용합니다. 프로젝트를 처음 설치할 때의 안내는 위와 같습니다.
 
 ## 2. 첫 실행에서 기능 확인하기
 

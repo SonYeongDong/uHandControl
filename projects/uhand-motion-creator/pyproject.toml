@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "uhand-motion-creator"
-version = "1.0.0"
+version = "1.0.1"
 description = "Desktop uHand motion editor and Python code generator"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -13,3 +13,6 @@ classifiers = ["Operating System :: Microsoft :: Windows", "Operating System :: 
 uhand-motion-creator = "uhand_motion_creator.__main__:main"
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+uhand_motion_creator = ["uHandMotionCreator.ico"]

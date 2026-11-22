@@ -1,6 +1,6 @@
 """Light Studio interface. Widgets display server state; they do not send output commands."""
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QColor, QFont, QPainter, QRadialGradient
+from PySide6.QtGui import QIcon, QColor, QFont, QPainter, QRadialGradient
 from PySide6.QtWidgets import (
     QApplication, QFrame, QGridLayout, QHBoxLayout, QLabel, QMainWindow,
     QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
 from uhand_server_lifecycle import led_output
 from .viewport import HandViewport
 from .protocol import PULSE_LIMITS
-from uhand_about import add_about_action
+from pathlib import Path
+from uhand_about import add_about_action, product_logo
 from . import __version__
 
 LOGO_COLOR = "#cc3344"
@@ -110,6 +111,7 @@ class MainWindow(QMainWindow):
         self.displayed_error_id = 0
         self.dismissed_error_id = 0
         self.setWindowTitle("uHandVirtualServer")
+        self.setWindowIcon(QIcon(str(Path(__file__).with_name("uHandVirtualServer.ico"))))
         self.setMinimumSize(740, 740)
         available = QApplication.primaryScreen().availableGeometry()
         scale = max(1,min(100,(available.width()-50)//16,(available.height()-60)//9))
@@ -124,11 +126,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(10)
         header = QHBoxLayout()
         header.setSpacing(14)
-        logo = label("U")
-        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo.setFixedSize(44, 44)
-        logo.setObjectName("appLogo")
-        logo.setStyleSheet(f"background:{LOGO_COLOR};color:white;border-radius:12px;font-size:27px;font-weight:700;")
+        logo = product_logo(self, 44, "appLogo")
         header.addWidget(logo)
         titles = QVBoxLayout()
         titles.setSpacing(1)
@@ -166,7 +164,7 @@ class MainWindow(QMainWindow):
         self.viewport = HandViewport()
         for text, action in (
             ("기본 보기", self.viewport.home), ("정면", self.viewport.front),
-            ("＋", lambda: self.viewport.zoom(0.85)), ("−", lambda: self.viewport.zoom(1.15)),
+            ("＋", lambda: self.viewport.zoom(0.85)), ("−", lambda: self.viewport.zoom(1.18)),
         ):
             button = QPushButton(text)
             button.clicked.connect(action)
@@ -174,7 +172,7 @@ class MainWindow(QMainWindow):
             tools.addWidget(button)
         viewport_layout.addLayout(tools)
         viewport_layout.addWidget(self.viewport, 1)
-        self.motion_label = label("표시 기준 자세 · 완료 기록 없음", "muted")
+        self.motion_label = label("현재 손가락·손목 펄스값", "muted")
         viewport_layout.addWidget(self.motion_label)
         pulse_layout = QHBoxLayout()
         self.pulse_labels = []
@@ -316,6 +314,8 @@ class MainWindow(QMainWindow):
         layout.addLayout(footer)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
+        self._panel_state = None
+        self.timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.timer.start(33)
         self.refresh()
 
@@ -396,6 +396,23 @@ class MainWindow(QMainWindow):
 
     def refresh(self):
         state = self.server.snapshot()
+        interval = 16 if state["active"] == "SetuHandPulse" or state["phase"] else 33
+        if self.timer.interval() != interval:
+            self.timer.setInterval(interval)
+        self.viewport.set_pulses(state["pulses"])
+        for (name, widget), value in zip(self.pulse_labels, state["pulses"]):
+            text = f"{name}\n{round(value)}"
+            if widget.text() != text:
+                widget.setText(text)
+        # Updating the tables or re-laying out controls on every animation frame
+        # competes with the OpenGL paint even when only the fingers have moved.
+        panel_state = {key: val for key, val in state.items()
+                       if key not in ("pulses", "motion", "events")}
+        panel_state["last_event"] = state["events"][-1][0] if state["events"] else None
+        panel_state["closing"] = self.closing
+        if panel_state == self._panel_state:
+            return
+        self._panel_state = panel_state
         status = state["status"]
         phases = {"startup": "서버 준비 중", "connect": "연결 준비 중", "disconnect": "연결 해제 중"}
         powered_off = state.get("powered_off", False)
@@ -420,15 +437,7 @@ class MainWindow(QMainWindow):
         self.listen_button.setToolTip("가상 로봇손의 동작을 중단하고 Client 연결을 즉시 끊습니다."
                                      if state["listening"] else "가상 로봇손을 켜고 기본 자세로 복귀한 뒤 준비음을 재생합니다.")
         self.clear_log_button.setEnabled(bool(state["events"]))
-        self.viewport.set_pulses(state["pulses"])
-        for (name, widget), value in zip(self.pulse_labels, state["pulses"]):
-            widget.setText(f"{name}\n{round(value)}")
-        if powered_off:
-            self.motion_label.setText("전원 꺼짐 · 중지 시점의 자세")
-        elif state["active"] == "SetuHandPulse":
-            self.motion_label.setText("이동 중 · 표시값은 현재 가상 자세이며 완료 기록과 구분됩니다")
-        else:
-            self.motion_label.setText("마지막 목표 자세" if status["TargetPulses"] else "표시 기준 자세 · 완료 기록 없음")
+
         if powered_off:
             self.frequency.setText("0 Hz")
             self.buzzer_time.setText("전원 꺼짐")

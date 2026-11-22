@@ -40,9 +40,8 @@ class DesktopAudio:
             self._output = self._open_output()
         return self._output
 
-    def prime_notice(self, home_ms):
-        # Ordinary 0 Hz is a stop command. Here the device must actually stream silence.
-        self._get().play_pcm(bytes(SAMPLE_RATE * home_ms // 1000 * 2))
+    def enable_idle_output(self):
+        self._get().enable_idle_output()
 
     def play_notice_note(self, index, notes, tone_ms, gap_ms, cancel):
         from ._waveout import make_pcm
@@ -72,9 +71,12 @@ class DesktopAudio:
         if type(frequency) is not int or not 0 < frequency <= 10000:
             raise CommandError("UNSUPPORTED_FREQUENCY", "Virtual PCM output supports 1..10000 Hz.")
         try:
-            self._get().play(frequency, 1000, True)
+            self._start_continuous(frequency)
         except (OSError, RuntimeError, ValueError) as exc:
             raise CommandError("DEVICE_ERROR", str(exc)) from exc
+
+    def _start_continuous(self, frequency):
+        self._get().play(frequency, 1000, True)
 
     def play(self, frequency, duration, cancel):
         if type(frequency) is not int or not 0 < frequency <= 10000:
@@ -110,6 +112,10 @@ class WindowsAudio(DesktopAudio):
 
 class MacAudio(DesktopAudio):
     description = "macOS 기본 출력 · 48 kHz · 연속 재생"
+
+    def _start_continuous(self, frequency):
+        from ._waveout import continuous_pcm
+        self._get().play_pcm(continuous_pcm(frequency), continuous=True)
 
     def _open_output(self):
         from uhand_desktop_audio import MacAudioOutput

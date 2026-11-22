@@ -8,22 +8,27 @@ def main():
     parser.add_argument("--port", type=int, default=5000)
     args = parser.parse_args()
     from PySide6.QtWidgets import QApplication, QMessageBox
-    from .audio import create_audio
-    from .server import VirtualServer
+    from .desktop_server import DesktopServer
     from .ui import MainWindow
+    if sys.platform == "win32":
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Inha.uHandControl.uHandVirtualServer")
     app = QApplication(sys.argv[:1])
     app.setApplicationName("uHandVirtualServer")
-    server = VirtualServer(args.host, args.port, audio=create_audio())
+    server = None
     try:
+        server = DesktopServer(args.host, args.port)
         try:
             server.start(background=True)
         except OSError as exc:
             server.log(f"전원 켜기 실패 · IP와 포트를 확인하세요. {exc}", "error")
         window = MainWindow(server)
     except Exception as exc:
-        server.shutdown()
+        if server is not None:
+            server.shutdown()
         QMessageBox.critical(None, "uHandVirtualServer 시작 오류", str(exc))
         return 1
+    app.setWindowIcon(window.windowIcon())
     window.show()
     try:
         return app.exec()

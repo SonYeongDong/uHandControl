@@ -28,7 +28,8 @@ from .motion_list import MotionList
 from .sequence_window import SequenceWindow
 from .viewport import EditViewport, thumbnail
 from .style import STYLE
-from uhand_about import add_about_action
+from pathlib import Path
+from uhand_about import add_about_action, product_logo
 from . import __version__
 
 AXES=("Finger1","Finger2","Finger3","Finger4","Finger5","Wrist")
@@ -147,6 +148,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.playback=None;self.playing_row=-1
         self.play_timer=QTimer(self);self.play_timer.setInterval(16);self.play_timer.timeout.connect(self._play_tick)
         self.setWindowTitle("uHandMotionCreator");self.setStyleSheet(STYLE)
+        self.setWindowIcon(QIcon(str(Path(__file__).with_name("uHandMotionCreator.ico"))))
         self.setMinimumSize(740,740)
         available=QApplication.primaryScreen().availableGeometry()
         scale=max(1,min(100,(available.width()-50)//16,(available.height()-60)//9))
@@ -158,9 +160,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.setCentralWidget(root)
         layout=QVBoxLayout(root);layout.setContentsMargins(20,12,20,10);layout.setSpacing(10);layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         header=QHBoxLayout()
-        logo=label("U");logo.setObjectName("appLogo")
-        logo.setAlignment(Qt.AlignmentFlag.AlignCenter);logo.setFixedSize(44,44)
-        logo.setStyleSheet("background:#245eea;color:white;border-radius:12px;font-size:27px;font-weight:700;")
+        logo = product_logo(self, 44, "appLogo")
         brand = QHBoxLayout()
         brand.setSpacing(14)
         brand.addWidget(logo)

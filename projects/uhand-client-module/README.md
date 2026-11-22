@@ -1,4 +1,4 @@
-# uHandClientModule 1.0.0
+# uHandClientModule 1.0.1
 
 Python 코드에서 uHandVirtualServer 또는 실물 uHandServer를 제어하는 모듈입니다. 한 Python 프로세스에서 서버 한 대에 연결합니다. 처음 연습할 때는 [같은 PC의 가상 서버](../uhand-virtual-server/README.md)를 먼저 실행하세요.
 
@@ -10,7 +10,7 @@ Windows와 macOS에서 **클라이언트 모듈만 사용하면 Python 3.10 이�
 
 uHandVirtualServer에서 **연결 대기**가 표시되면 VS Code에서 [상태 조회 예제](examples/get_status.py) 또는 [손가락으로 1~5 세기 예제](examples/basic_sequence.py)를 열고 **Run Python File**을 누르세요. 두 예제는 파일 위치를 기준으로 프로젝트의 `src/uhand_client_module`을 찾아 사용합니다. 기본 연결 대상은 같은 컴퓨터의 `127.0.0.1:5000`입니다. 다른 서버는 `--ip`와 `--port`로 지정할 수 있습니다.
 
-`run.pyw`로 GUI를 한 번 열었다면 클라이언트도 함께 설치됩니다. 저장소 최상위에서 다음 명령으로 상태를 조회할 수 있습니다.
+런처(`uHandControlLauncher.pyw`)로 GUI를 한 번 열었다면 클라이언트도 함께 설치됩니다. 저장소 최상위에서 다음 명령으로 상태를 조회할 수 있습니다.
 
 | 운영체제 | 상태 조회 예제 실행 |
 | --- | --- |
@@ -67,10 +67,12 @@ finally:
 | --- | --- | --- |
 | `Connect(IP, Port)` | 숫자 IPv4 또는 IPv6 주소 문자열과 포트 정수 1~65535. 준비된 서버에 연결합니다. | `None` |
 | `Disconnect()` | 인수 없이 연결을 닫습니다. 이미 연결이 닫힌 경우에도 호출할 수 있습니다. | `None` |
-| `SetuHandPulse(Finger1Pulse, Finger2Pulse, Finger3Pulse, Finger4Pulse, Finger5Pulse, WristPulse, RunningTime)` | 엄지 800~2200, 검지·중지·약지·소지 각각 800~2000, 손목 500~2500의 펄스 정수. 마지막 인수는 100~20000 ms이며 동작 완료까지 기다립니다. | `None` |
+| `SetuHandPulse(Finger1Pulse, Finger2Pulse, Finger3Pulse, Finger4Pulse, Finger5Pulse, WristPulse, RunningTime)` | 엄지 800~2200, 검지·중지·약지·소지 각각 800~2000, 손목 500~2500의 펄스 정수. `RunningTime`은 100~20000 ms입니다. 서버가 지정 시간 동안 이동 명령을 처리하면 반환합니다. | `None` |
 | `SetuHandBuzzer(Frequency, RunningTime, Continuous=False)` | 주파수 정수 0~10000 Hz, 시간 정수 100~20000 ms. 기본값에서는 지정 시간만큼 기다립니다. `True`이면 적용 후 반환하고 다음 부저 명령까지 유지합니다. 시간은 두 모드 모두 유효 범위로 지정합니다. | `None` |
 | `SetuHandLED(Red, Green, Blue, Brightness=100)` | RGB 각 정수 0~255, 전체 밝기 정수 0~100%. 두 LED에 같은 출력을 즉시 적용합니다. 예전 채널 입력 `True/False`도 각각 255/0으로 처리합니다. | `None` |
 | `GetStatus()` | 인수 없이 마지막 적용·완료 기록을 조회합니다. 동작 중 다른 스레드에서 호출하면 이전 완료 기록을 읽습니다. | `dict` |
+
+예를 들어 `RunningTime=1000`이면 클라이언트는 서버가 1초의 이동 처리를 마쳤다는 응답을 기다립니다. 실제 서보는 관절 위치를 회신하지 않으므로, 반환 시점에 손가락이 목표에 도착했는지는 확인할 수 없습니다.
 
 손가락을 펼칠 때 엄지는 낮은 값, 검지부터 소지까지는 높은 값을 사용합니다. 부저에서 `SetuHandBuzzer(0, 250)`는 250 ms 무음 대기, `SetuHandBuzzer(0, 100, True)`는 즉시 무음 전환입니다. LED는 `SetuHandLED(0, 0, 0)`으로 끕니다.
 

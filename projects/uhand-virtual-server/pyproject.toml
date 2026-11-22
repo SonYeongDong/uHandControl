@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uhand-virtual-server"
-version = "1.0.0"
+version = "1.0.1"
 description = "Desktop virtual uHand server with a Light Studio 3D interface"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -16,3 +16,6 @@ uhand-virtual-server = "uhand_virtual_server.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+uhand_virtual_server = ["uHandVirtualServer.ico"]

@@ -8,6 +8,9 @@ import numpy as np
 
 SAMPLE_RATE=48000
 
+# Half a second of 48 kHz, mono, signed 16-bit silence, looped by the device.
+IDLE_PCM = bytes(SAMPLE_RATE)
+
 def make_pcm(frequency,duration,rate=48000,channels=1,sample_format="Int16",fade_edges=True):
     if type(frequency) is not int or not 0<=frequency<=min(10000,(rate-1)//2):
         raise ValueError(f"PC 소리 미리듣기는 0~{min(10000,(rate-1)//2)}Hz를 지원합니다.")
@@ -72,6 +75,8 @@ class WindowsAudio:
     """Open at app startup without sound; play/stop never reopen the device."""
     def __init__(self,device=None):
         self._device=device;self._handle=None;self._buffer=None;self._header=None;self._prepared=False
+        self._keep_warm = False
+        self._idle = False
         try:self._open()
         except (OSError,RuntimeError):pass  # Editing still works without speakers.
     def _open(self):
@@ -80,8 +85,13 @@ class WindowsAudio:
     def play(self,frequency,duration,continuous=False):
         if type(continuous) is not bool:raise ValueError("Continuous must be bool")
         data=make_pcm(frequency,1000 if continuous else duration,fade_edges=not continuous)
-        self.stop()
-        if frequency == 0:return
+        if frequency == 0:
+            self.stop()
+            return
+        self.play_pcm(data, continuous)
+
+    def play_pcm(self, data, continuous=False):
+        self._release_buffer()
         self._open()
         self._buffer=ctypes.create_string_buffer(data)
         self._header=WaveHeader(ctypes.cast(self._buffer,ctypes.c_void_p),len(data),0,0,12 if continuous else 0,0xFFFFFFFF if continuous else 0,None,0)
@@ -89,15 +99,30 @@ class WindowsAudio:
             self._device.prepare(self._handle,self._header);self._prepared=True
             self._device.write(self._handle,self._header)
         except (OSError,RuntimeError):
-            self.stop();raise
+            self._release_buffer();raise
+    def enable_idle_output(self):
+        self._keep_warm = True
+        self.stop()
+
     def stop(self):
+        if self._keep_warm:
+            if not self._idle:
+                self.play_pcm(IDLE_PCM, continuous=True)
+                self._idle = True
+        else:
+            self._release_buffer()
+
+    def _release_buffer(self):
         if self._prepared:
             # Keep memory alive if the driver fails to return/unprepare the buffer.
             self._device.reset(self._handle)
             self._device.unprepare(self._handle,self._header)
         self._prepared=False;self._header=None;self._buffer=None
+        self._idle = False
+
     def close(self):
-        self.stop()
+        self._keep_warm = False
+        self._release_buffer()
         if self._handle is not None:
             self._device.close(self._handle);self._handle=None
 
@@ -105,5 +130,12 @@ class WindowsAudio:
 def create_audio():
     if sys.platform == "darwin":
         from uhand_desktop_audio import MacAudioOutput
-        return MacAudioOutput(make_pcm)
-    return WindowsAudio()
+        output = MacAudioOutput(make_pcm)
+    else:
+        output = WindowsAudio()
+    try:
+        output.enable_idle_output()
+    except (OSError, RuntimeError, ImportError):
+        # Editing remains available without a working output device.
+        pass
+    return output
