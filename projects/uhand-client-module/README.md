@@ -2,24 +2,40 @@
 
 Python 코드에서 uHandVirtualServer 또는 실물 uHandServer를 제어하는 모듈입니다. 한 Python 프로세스에서 서버 한 대에 연결합니다. 처음 연습할 때는 [같은 PC의 가상 서버](../uhand-virtual-server/README.md)를 먼저 실행하세요.
 
-**Mac 사용자** · [macOS에서 설치하고 실행하기](../../docs/macos-testing.md)
-
 ## 설치와 첫 실행
 
-VS Code에서 바로 실행하려면 먼저 uHandVirtualServer를 켜고 **연결 대기**를 확인하세요. [상태 조회 예제](examples/get_status.py) 또는 [손가락으로 1~5 세기 예제](examples/basic_sequence.py)를 열고 **Run Python File**을 누르면 됩니다. 두 예제는 파일 위치를 기준으로 같은 프로젝트의 `src/uhand_client_module`을 찾아 사용하며, 기본 연결 대상은 이 PC의 `127.0.0.1:5000`입니다. 다른 주소나 포트는 터미널에서 `--ip`, `--port`로 지정할 수 있습니다.
+Windows와 macOS에서 **클라이언트 모듈만 사용하면 Python 3.10 이상**, **같은 컴퓨터에서 두 GUI도 실행하면 64비트 Python 3.13**을 준비하세요. [GUI 설치와 첫 실행](../../README.md)
 
-Windows 또는 macOS용 Python 3.10 이상이 필요합니다. 두 GUI와 함께 사용하는 검증 환경은 Python 3.13.2입니다. 저장소 최상위에서 [실행기](../../run.pyw)로 GUI 하나를 열었다면 ClientModule도 같은 환경에 설치되어 있습니다. 가상 서버가 연결 대기 중일 때 다음 명령을 실행하세요.
+### 예제로 연결 확인하기
 
-```powershell
-.\.venv\Scripts\python.exe projects\uhand-client-module\examples\get_status.py --port 5000
-```
+uHandVirtualServer에서 **연결 대기**가 표시되면 VS Code에서 [상태 조회 예제](examples/get_status.py) 또는 [손가락으로 1~5 세기 예제](examples/basic_sequence.py)를 열고 **Run Python File**을 누르세요. 두 예제는 파일 위치를 기준으로 프로젝트의 `src/uhand_client_module`을 찾아 사용합니다. 기본 연결 대상은 같은 컴퓨터의 `127.0.0.1:5000`입니다. 다른 서버는 `--ip`와 `--port`로 지정할 수 있습니다.
 
-모듈만 따로 설치하려면 저장소 최상위의 PowerShell에서 아래 명령을 실행합니다. VS Code에서는 **Python: Select Interpreter**로 이 폴더의 `.venv\Scripts\python.exe`를 선택합니다.
+`run.pyw`로 GUI를 한 번 열었다면 클라이언트도 함께 설치됩니다. 저장소 최상위에서 다음 명령으로 상태를 조회할 수 있습니다.
+
+| 운영체제 | 상태 조회 예제 실행 |
+| --- | --- |
+| Windows PowerShell | `.\.venv\Scripts\python.exe projects\uhand-client-module\examples\get_status.py --port 5000` |
+| macOS 터미널 | `.venv/bin/python projects/uhand-client-module/examples/get_status.py --port 5000` |
+
+### 클라이언트만 설치해 내 코드에서 사용하기
+
+저장소 최상위에서 자신의 운영체제에 맞는 명령을 실행합니다.
+
+**Windows PowerShell**
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install .\projects\uhand-client-module
 ```
+
+**macOS 터미널**
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install ./projects/uhand-client-module
+```
+
+VS Code에서 **Python: Select Interpreter**를 열고 Windows에서는 `.venv\Scripts\python.exe`, Mac에서는 `.venv/bin/python`을 선택하세요.
 
 ## 첫 제어 예제
 

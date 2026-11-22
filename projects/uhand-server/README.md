@@ -1,8 +1,8 @@
 # uHandServer
 
-uHandServer는 Hiwonder uHandPi의 Raspberry Pi OS에서 실행되는 실물 제어 서버입니다. Windows의 uHandMotionCreator 또는 uHandClientModule에서 보내는 명령을 받아 다섯 손가락과 손목, 부저, 두 RGB LED를 구동합니다.
+uHandServer는 Hiwonder uHandPi의 Raspberry Pi OS에서 실행되는 실물 제어 서버입니다. Windows 또는 macOS에서 실행한 uHandMotionCreator 또는 uHandClientModule에서 보내는 명령을 받아 다섯 손가락과 손목, 부저, 두 RGB LED를 구동합니다.
 
-처음 설치할 때는 준비된 OS 이미지를 microSD 카드에 기록합니다. 다운로드 정보, Windows 기록 절차, SSH 계정과 초기 비밀번호는 설치 가이드에서 확인하세요. [실물 로봇손 설치 가이드](../../docs/hardware-setup.md)
+처음 설치할 때는 준비된 OS 이미지를 microSD 카드에 기록합니다. 다운로드 정보, Windows에서 Win32 Disk Imager로 카드를 기록하는 절차, SSH 계정과 초기 비밀번호는 설치 가이드에서 확인하세요. [실물 로봇손 설치 가이드](../../docs/hardware-setup.md)
 
 ## 소리로 서버 상태 확인하기
 
@@ -54,13 +54,24 @@ uHandServer는 Hiwonder uHandPi의 Raspberry Pi OS에서 실행되는 실물 제
 
 제조사 SDK `/home/pi/uhandpi/common_sdk/common/ros_robot_controller_sdk.py`와 보정 원본 `/home/pi/uhandpi/config/deviation.yaml`은 장비에 보존합니다. 장비별 보정을 변경한 사용자는 새 프로필과 기존 프로필을 비교하고 해당 장비와의 호환성을 먼저 확인하세요.
 
-### 1. Windows에서 새 릴리스 전송
+### 1. Windows 또는 Mac에서 로봇손으로 새 릴리스 전송
 
-GitHub Releases에서 **설치하려는 버전의 소스 ZIP**을 받아 압축을 풉니다. `projects`와 `shared`가 보이는 최상위 폴더에서 PowerShell을 열고 다음 명령을 차례로 실행합니다. 각 명령이 성공하면 다음 줄로 넘어가세요.
+GitHub Releases에서 **설치하려는 버전의 소스 ZIP**을 받아 압축을 풉니다. `projects`와 `shared`가 보이는 최상위 폴더에서 자신의 운영체제에 맞는 명령을 차례로 실행합니다. 각 명령이 성공하면 다음 줄로 넘어가세요.
+
+**Windows PowerShell**
 
 ```powershell
 tar.exe -czf "$env:TEMP\uhand-server-update.tar.gz" projects/uhand-server/run_server.py projects/uhand-server/src/uhand_server projects/uhand-server/config/hardware-profile.json projects/uhand-server/systemd/uhand-server.service shared/uhand-server-lifecycle/src/uhand_server_lifecycle
 scp "$env:TEMP\uhand-server-update.tar.gz" pi@192.168.61.1:~/uhand-server-update.tar.gz
+ssh pi@192.168.61.1
+```
+
+**macOS 터미널**
+
+```sh
+archive="${TMPDIR:-/tmp}/uhand-server-update.tar.gz"
+tar -czf "$archive" projects/uhand-server/run_server.py projects/uhand-server/src/uhand_server projects/uhand-server/config/hardware-profile.json projects/uhand-server/systemd/uhand-server.service shared/uhand-server-lifecycle/src/uhand_server_lifecycle
+scp "$archive" pi@192.168.61.1:~/uhand-server-update.tar.gz
 ssh pi@192.168.61.1
 ```
 
@@ -110,7 +121,7 @@ systemctl show uhand-server.service -p WorkingDirectory -p ActiveState
 uhand-mode status
 ```
 
-준비음이 끝난 뒤 `WorkingDirectory`가 새 버전 경로인지, `uhand-mode status`가 `active/running`과 `boot=enabled`를 표시하는지 확인합니다. Windows의 uHandMotionCreator에서 `192.168.61.1:5000`으로 연결하여 상태를 조회하고 LED를 잠시 켰다가 꺼 보세요. 시작 실패 또는 반복 재시작은 `sudo journalctl -u uhand-server.service -b -n 50 --no-pager`로 확인합니다.
+준비음이 끝난 뒤 `WorkingDirectory`가 새 버전 경로인지, `uhand-mode status`가 `active/running`과 `boot=enabled`를 표시하는지 확인합니다. Windows 또는 Mac의 uHandMotionCreator에서 `192.168.61.1:5000`으로 연결하여 상태를 조회하고 LED를 잠시 켰다가 꺼 보세요. 시작 실패 또는 반복 재시작은 `sudo journalctl -u uhand-server.service -b -n 50 --no-pager`로 확인합니다.
 
 ### 4. 문제가 있으면 이전 버전으로 복귀
 
