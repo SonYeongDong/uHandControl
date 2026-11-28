@@ -25,9 +25,12 @@ class GestureModel:
     title: str = ""
     info: str = ""                        # one line shown under the model name
     gestures: list[str] = []
-    view: str = "bars"                    # which view the screen shows: "map", "votes" or "bars"
+    view: str = "bars"                    # which view the screen shows: "map", "votes", "duels" or "bars"
     delay_s: float = 0.2                  # signal the model looks back on (shown as a hint)
     needs_calibration: bool = False
+    calibration_rest_s: float = 0.0       # > 0: the calibration is this much rest only (else rest and every gesture once)
+    calibration_hint: str = "약 40초"      # how long it takes, on the button that starts it
+    uncalibrated_note: str = "보정 전: 학습 때 기준을 써서 판정이 부정확합니다"
 
     def reset(self) -> None:
         """Forget the signal seen so far (the stream restarted or changed mode)."""

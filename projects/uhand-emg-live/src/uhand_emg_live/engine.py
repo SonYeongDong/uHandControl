@@ -39,6 +39,8 @@ from .sensor.link import Link
 
 TICK_S = 0.02
 DEFAULT_NAME = re.compile(r"action_\d\d\.uhjson", re.IGNORECASE)     # a gesture's default scene file
+SET_FILE = re.compile(r"(?:action_)?(\d{1,2})(?:[_\-. ].*)?\.uhjson", re.IGNORECASE)    # in a set folder: its action number
+DEFAULT_SET = "기본 동작"    # the set that is the scene folder's own action_NN.uhjson files
 HEALTH_S = 0.2
 STALE_S = 1.0               # no decision for this long: the model output is not current
 ERROR_HOLD_S = 3.0          # after a fault in the pipeline the robot stays parked this long
@@ -292,16 +294,25 @@ class Engine:
                 out[key] = path
         return out
 
+    def _set_folders(self) -> list[str]:
+        """The subfolders of the scene folder, by name. Each can be a set of scene files."""
+        try:
+            with os.scandir(self.scene_folder) as it:
+                return sorted(e.path for e in it if e.is_dir() and not e.name.startswith(("_", ".")))
+        except OSError:
+            return []
+
     def scene_library(self) -> list[tuple[str, str]]:
-        """(name, path) of every scene file that can be picked: the scene folder itself, then the
-        library folder. The scene folder's own action_NN.uhjson files are not listed: they are
-        the defaults every list already offers as "기본"."""
+        """(name, path) of every scene file that can be picked: the scene folder itself, then its
+        set folders, then the library folder. The scene folder's own action_NN.uhjson files are
+        not listed: they are the defaults every list already offers as "기본". A name that is
+        already in the list is followed by its folder."""
         t = self.cfg["theater"]
-        found, seen = [], set()
-        for own, folder in ((True, t["folder"]), (False, t.get("library", ""))):
-            if not folder:
-                continue
-            folder = os.path.normpath(os.path.join(config_mod.ROOT, folder))
+        folders = [(True, self.scene_folder)] + [(False, f) for f in self._set_folders()]
+        if t.get("library", ""):
+            folders.append((False, os.path.normpath(os.path.join(config_mod.ROOT, t["library"]))))
+        found, seen, labels = [], set(), set()
+        for own, folder in folders:
             try:
                 names = sorted(n for n in os.listdir(folder) if n.lower().endswith(".uhjson")
                                and not (own and DEFAULT_NAME.fullmatch(n)))
@@ -311,8 +322,51 @@ class Engine:
                 path = os.path.join(folder, n)
                 if path not in seen:
                     seen.add(path)
-                    found.append((os.path.splitext(n)[0], path))
+                    label = os.path.splitext(n)[0]
+                    if label in labels:
+                        label = f"{label} ({os.path.basename(folder)})"
+                    labels.add(label)
+                    found.append((label, path))
         return found
+
+    def scene_sets(self) -> list[tuple[str, dict[str, str]]]:
+        """(name, {gesture key: file}) of every set: scene files for all gestures that are
+        switched to at once. The first is the scene folder's own action_NN.uhjson files (no file
+        is picked). The others are its subfolders: there a file belongs to the gesture whose
+        action number its name starts with (3_제자리걸음.uhjson or action_03.uhjson -> 3). A
+        gesture the folder has no file for keeps its action_NN.uhjson."""
+        by_number = {number: key for key, number in self.cfg["theater"]["ids"].items()}
+        sets: list[tuple[str, dict[str, str]]] = [(DEFAULT_SET, {})]
+        for folder in self._set_folders():
+            files: dict[str, str] = {}
+            try:
+                names = sorted(os.listdir(folder))
+            except OSError:
+                continue
+            for n in names:
+                m = SET_FILE.fullmatch(n)
+                key = by_number.get(int(m.group(1))) if m else None
+                if key is not None and key not in files:
+                    files[key] = os.path.join(folder, n)
+            if files:
+                sets.append((os.path.basename(folder), files))
+        return sets
+
+    def scene_set(self) -> str | None:
+        """The set the gestures play now, or None when the files were picked one by one into
+        something that is no set."""
+        def same(a: dict[str, str]) -> dict[str, str]:
+            return {k: os.path.normcase(os.path.normpath(p)) for k, p in a.items()}
+        now = same(self.scene_files)
+        return next((name for name, files in self.scene_sets() if same(files) == now), None)
+
+    def set_scene_set(self, name: str) -> None:
+        """Switch every gesture to the files of this set. Saved and applied like single picks."""
+        files = dict(self.scene_sets()).get(name)
+        if files is None:
+            raise ValueError(f"없는 공연 세트입니다: {name}")
+        self.scene_files = {k: os.path.normpath(p) for k, p in files.items()}
+        self._apply_scene_choices()
 
     def add_scene_file(self, path: str) -> str:
         """Make a scene file from anywhere pickable. The file is checked first (ValueError or
@@ -346,6 +400,9 @@ class Engine:
             self.scene_files.pop(key, None)
         else:
             self.scene_files[key] = os.path.normpath(path)
+        self._apply_scene_choices()
+
+    def _apply_scene_choices(self) -> None:
         saved = {k: os.path.relpath(p, config_mod.ROOT) if os.path.splitdrive(p)[0] == os.path.splitdrive(config_mod.ROOT)[0]
                  else p for k, p in self.scene_files.items()}
         try:
@@ -357,15 +414,17 @@ class Engine:
             self.set_mode("theater")
 
     def start_calibration(self) -> bool:
-        """Guide the wearer through rest and every gesture once, collecting unlabelled signal."""
+        """Guide the wearer through rest and every gesture once, collecting unlabelled signal; or
+        through rest alone, for a model that asks for that (`calibration_rest_s`)."""
         with self._lock:
             m = self._model
             if m is None or not m.needs_calibration:
                 return False
             t = time.monotonic()
-            end = t + CALIB_REST_S
+            rest_only = m.calibration_rest_s > 0
+            end = t + (m.calibration_rest_s if rest_only else CALIB_REST_S)
             seq = [("힘을 빼고 쉬세요", "rest", end)]
-            for g in m.gestures:
+            for g in ([] if rest_only else m.gestures):
                 if g == "rest":
                     continue
                 end += CALIB_HOLD_S

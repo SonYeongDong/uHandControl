@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(ROOT, "src"))     # the source tree, not an inst
 from uhand_emg_live import config                                           # noqa: E402
 from uhand_emg_live.decide.stabilizer import Stabilizer                     # noqa: E402
 from uhand_emg_live.engine import Engine                                    # noqa: E402
+from uhand_emg_live.gestures import PUPPET                                  # noqa: E402
 from uhand_emg_live.models import Decision, GestureModel, discover          # noqa: E402
 from uhand_emg_live.motion.kalman import PoseKalman                         # noqa: E402
 from uhand_emg_live.motion.poses import HI, LO, PoseTable                   # noqa: E402
@@ -48,18 +49,32 @@ def feed_in_frames(model, t, x):
 
 
 # ------------------------------------------------------------------ models
-def test_discover_finds_both_families():
+def rested(model):
+    """A model that decides nothing before its rest calibration is given one."""
+    if model.calibration_rest_s:
+        t, x = signal(model.calibration_rest_s, seed=1)
+        model.calibration_start()
+        feed_in_frames(model, t - 50.0, x)
+        assert model.calibration_finish()[0]
+        model.reset()
+    return model
+
+
+def test_discover_finds_every_family():
     assert not PROBLEMS, PROBLEMS
     kinds = {s.kind for s in SPECS}
-    assert kinds == {"CNN", "RF"}
+    assert kinds == {"CNN", "RF", "SVM"}
+    files = [s.path for s in SPECS]
+    assert len(files) == len(set(files))                        # the two .joblib families each take their own files
 
 
 @pytest.mark.parametrize("spec", SPECS, ids=[s.title for s in SPECS])
 def test_model_decides_every_100ms(spec):
-    m = spec.load()
+    m = rested(spec.load())
     t, x = signal(3.0)
     out = feed_in_frames(m, t, x)
-    assert len(out) == round((3.0 - m.delay_s) / 0.1) + 1
+    n = round((3.0 - m.delay_s) / 0.1)
+    assert len(out) == (n if spec.kind == "SVM" else n + 1)     # the SVM decides on a time grid, not at a sample count
     assert np.allclose(np.diff([d.t for d in out]), 0.1)
     for d in out:
         assert d.proba.shape == (len(m.gestures),) and abs(d.proba.sum() - 1) < 1e-6
@@ -69,7 +84,7 @@ def test_model_decides_every_100ms(spec):
 
 def test_model_restarts_its_window_after_a_dropout():
     for spec in SPECS:
-        m = spec.load()
+        m = rested(spec.load())
         t, x = signal(2.0)
         t[600:] += 0.3                                           # 0.3 s of samples lost
         out = feed_in_frames(m, t, x)
@@ -102,6 +117,57 @@ def test_forest_loader_refuses_other_pickles(tmp_path):
     bad.write_bytes(pickle.dumps(os.getcwd))                     # any callable outside the allowlist
     with pytest.raises(pickle.UnpicklingError):
         load_forest(str(bad))
+
+
+def test_svm_decides_only_after_its_rest_calibration():
+    m = next(s for s in SPECS if s.kind == "SVM").load()
+    assert m.needs_calibration and not m.calibrated
+    assert feed_in_frames(m, *signal(3.0)) == []                 # no resting level yet: no decision
+    m.calibration_start()
+    assert not m.calibration_finish()[0]                         # nothing arrived meanwhile
+    m.calibration_start()
+    t, x = signal(8.0, seed=1)
+    feed_in_frames(m, t + 10.0, x)
+    ok, note = m.calibration_finish()
+    assert ok and m.calibrated and "보정됨" in note
+    m.reset()                                                    # a restart of the stream keeps the calibration
+    t, x = signal(2.0, seed=2)
+    out = feed_in_frames(m, t + 30.0, x)
+    assert len(out) == 12 and all(d.raw.max() == 1 and d.raw.sum() == 1 for d in out)     # one label per decision
+    assert np.allclose(out[2].proba, np.mean([d.raw for d in out[:3]], axis=0))            # the share of the last three
+    # a dropout: nothing is decided until 0.8 s of unbroken signal is there again
+    again = feed_in_frames(m, t + 32.5, x)
+    assert again and again[0].t >= t[0] + 32.5 + 0.8 - 1e-6
+
+
+def test_svm_view_shows_the_duels_the_label_comes_from():
+    import copy as _copy
+    m = rested(next(s for s in SPECS if s.kind == "SVM").load())
+    data = m.view_data()
+    n, pairs = len(m.gestures), data["pairs"]
+    assert m.view == "duels" and len(pairs) == n * (n - 1) // 2 == len(data["support"])
+    assert all(0 < a <= data["total"] and 0 < b <= data["total"] for a, b in data["support"])
+    svc = _copy.copy(m.model.steps[-1][1])
+    svc.decision_function_shape = "ovo"                                  # scikit-learn's own pairwise margins
+    rng = np.random.default_rng(3)
+    for d in feed_in_frames(m, *signal(2.0, seed=4)):
+        assert d.view["duels"].shape == (len(pairs),)
+    # a duel's support vectors lie on its margin: decision value +1 for the first gesture's, -1 for the second's
+    table = m._duels
+    for p in (0, 13, 27):
+        used = np.flatnonzero(table["weight"][p])
+        x = table["sv"][used]
+        k = np.exp(-table["gamma"] * ((x ** 2).sum(1)[:, None] + table["sq"][None, :] - 2 * x @ table["sv"].T))
+        value = k @ table["weight"][p] + table["bias"][p]
+        assert np.allclose(value, np.sign(table["weight"][p, used]), atol=2e-2)
+    for _ in range(20):
+        v = rng.normal(0, 1.5, 92 * 7)
+        got = m.duels(v)["duels"]
+        assert np.allclose(got, svc.decision_function(m.model[:-1].transform(v[None]))[0], atol=1e-3)
+        wins = np.zeros(n, int)
+        for (i, j), margin in zip(pairs, got):
+            wins[i if margin > 0 else j] += 1
+        assert m.gestures[int(wins.argmax())] == PUPPET[int(m.model.predict(v[None])[0])]    # most wins = the label
 
 
 def test_cnn_calibration_changes_the_placement():
@@ -367,6 +433,27 @@ def test_engine_guides_a_calibration_and_parks_the_robot_meanwhile(monkeypatch):
         eng.close()
 
 
+def test_engine_calibrates_a_rest_only_model_with_rest_alone():
+    link = Link()
+    eng = Engine(CFG, link)
+    eng.start()
+    try:
+        m = next(s for s in SPECS if s.kind == "SVM").load()
+        m.calibration_rest_s = 4.0                               # short, but still over the 30 windows it asks for
+        eng.set_model(m)
+        link.open_demo("hex")
+        assert wait_for(lambda: eng.state().park_reason == "판정 대기", 6)       # signal, but no decision before calibration
+        assert not eng.state().calibrated and eng.start_calibration()
+        seen = set()
+        assert wait_for(lambda: seen.add(getattr(eng.state().calib, "gesture", None)) or eng.state().calib is None, 8)
+        assert seen - {None} == {"rest"}                         # no walk through the gestures
+        st = eng.state()
+        assert st.calibrated and "보정됨" in st.calib_note
+        assert wait_for(lambda: not eng.state().parked, 4)
+    finally:
+        eng.close()
+
+
 # ------------------------------------------------------------------ puppet show: scene files
 IDS = CFG["theater"]["ids"]
 A, B, C = [2200, 800, 800, 800, 800, 1500], [800, 2000, 2000, 2000, 2000, 1500], [1500, 1500, 1500, 1500, 1500, 900]
@@ -449,6 +536,43 @@ def test_engine_adds_a_scene_file_from_anywhere(tmp_path):
     try:
         fist = next(r for r in eng.scene_report() if r.key == "fist")
         assert fist.state == "ok" and fist.file == "인사.uhjson" and fist.cards == 1 and fist.picked == added
+    finally:
+        eng.close()
+
+
+def test_engine_switches_every_gesture_to_a_set_of_scene_files(tmp_path):
+    cfg = copy.deepcopy(CFG)
+    scenes = tmp_path / "scenes"
+    puppet = scenes / "인형 동작"
+    puppet.mkdir(parents=True)
+    (scenes / "_old").mkdir()                                            # not a set: the name starts with _
+    (scenes / "빈 폴더").mkdir()                                          # not a set: no numbered scene file
+    cfg["theater"].update(folder=str(scenes), library="")
+    scene_file(scenes, IDS["fist"], [motion(A, 100)])
+    scene_file(puppet, IDS["fist"], [motion(B, 300), motion(A, 300)])    # action_06.uhjson
+    rest = puppet / f"{IDS['rest']}_초기동작.uhjson"
+    rest.write_bytes((puppet / "action_06.uhjson").read_bytes())
+    note = puppet / "메모.uhjson"                                         # no number: in the lists, not in the set
+    note.write_bytes(rest.read_bytes())
+    eng = Engine(cfg, Link())
+    try:
+        assert [name for name, _ in eng.scene_sets()] == ["기본 동작", "인형 동작"]
+        assert eng.scene_set() == "기본 동작"
+        assert ("메모", str(note)) in eng.scene_library()
+        eng.set_mode("theater")
+        eng.set_scene_set("인형 동작")
+        report = {r.key: r for r in eng.scene_report()}
+        assert report["fist"].cards == 2 and report["rest"].file == rest.name and report["open"].state == "missing"
+        assert eng.scene_set() == "인형 동작"
+        again = Engine(cfg, Link())                                      # saved: the next run starts with it
+        assert again.scene_set() == "인형 동작"
+        again.close()
+        eng.set_scene_file("open", str(note))
+        assert eng.scene_set() is None                                   # picked one by one: no set
+        eng.set_scene_set("기본 동작")
+        assert eng.scene_files == {} and next(r for r in eng.scene_report() if r.key == "fist").cards == 1
+        with pytest.raises(ValueError):
+            eng.set_scene_set("없는 세트")
     finally:
         eng.close()
 

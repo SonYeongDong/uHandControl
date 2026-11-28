@@ -16,7 +16,7 @@ def discover(models_dir: str) -> tuple[list[ModelSpec], list[str]]:
     specs: list[ModelSpec] = []
     problems: list[str] = []
     for mod in pkgutil.iter_modules(__path__):
-        if mod.name in ("base", "cnn_net"):
+        if mod.name in ("base", "cnn_net", "safe_joblib"):
             continue
         try:
             module = importlib.import_module(f"{__name__}.{mod.name}")

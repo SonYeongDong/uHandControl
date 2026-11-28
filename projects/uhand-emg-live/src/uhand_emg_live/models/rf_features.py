@@ -16,18 +16,18 @@ as it really is: view_data()["tree"] is its structure and Decision.view["path"] 
 current window passed through, root to leaf.
 
 A .joblib file is a pickle, which can run code when loaded. It is therefore read through an
-unpickler that only accepts the scikit-learn forest and numpy array classes.
+unpickler that only accepts the scikit-learn forest and numpy array classes (safe_joblib). Files
+of another family in the same folder (svm_context) are left to that family.
 """
 from __future__ import annotations
 
 import glob
 import os
-import pickle
-import warnings
 
 import numpy as np
 
 from ..gestures import PUPPET
+from . import safe_joblib
 from .base import Decision, GestureModel, ModelSpec
 
 FS = 500.0
@@ -43,10 +43,6 @@ _ALLOWED = {
     ("sklearn.ensemble._forest", "RandomForestClassifier"),
     ("sklearn.tree._classes", "DecisionTreeClassifier"),
     ("sklearn.tree._tree", "Tree"),
-    ("joblib.numpy_pickle", "NumpyArrayWrapper"),
-    ("numpy", "ndarray"), ("numpy", "dtype"),
-    ("numpy.core.multiarray", "_reconstruct"), ("numpy._core.multiarray", "_reconstruct"),
-    ("numpy.core.multiarray", "scalar"), ("numpy._core.multiarray", "scalar"),
 }
 
 
@@ -77,21 +73,7 @@ def features(x: np.ndarray) -> np.ndarray:
 
 def load_forest(path: str):
     """Unpickle a forest, refusing any class that is not part of one."""
-    from joblib.numpy_pickle import NumpyUnpickler
-
-    class Safe(NumpyUnpickler):
-        def find_class(self, module, name):
-            if (module, name) not in _ALLOWED:
-                raise pickle.UnpicklingError(f"모델 파일에 허용되지 않은 내용이 있습니다: {module}.{name}")
-            return super().find_class(module, name)
-
-    with open(path, "rb") as fh, warnings.catch_warnings():
-        warnings.simplefilter("ignore")              # saved with another scikit-learn version
-        try:
-            return Safe(path, fh, ensure_native_byte_order=False, mmap_mode=None).load()
-        except TypeError:                            # older joblib: no ensure_native_byte_order
-            fh.seek(0)
-            return Safe(path, fh, mmap_mode=None).load()
+    return safe_joblib.load(path, _ALLOWED)
 
 
 class FeatureForest(GestureModel):
@@ -188,4 +170,5 @@ class FeatureForest(GestureModel):
 
 def find(models_dir: str) -> list[ModelSpec]:
     return [ModelSpec(os.path.splitext(os.path.basename(p))[0], "RF", p, lambda p=p: FeatureForest(p))
-            for p in sorted(glob.glob(os.path.join(models_dir, "*.joblib")))]
+            for p in sorted(glob.glob(os.path.join(models_dir, "*.joblib")))
+            if safe_joblib.top_class(p) in (None, "RandomForestClassifier")]

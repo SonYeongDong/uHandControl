@@ -165,6 +165,15 @@ def main() -> int:
     spin(3.0)
     state("C3_cnn_map", shots=("default", "small"))
 
+    # C4-C5. SVM: nothing before its rest-only calibration, then its duel view
+    win.select_model("emg_svm")
+    spin(1.5)
+    state("C4_svm_uncalibrated")
+    eng.model.calibration_rest_s = 4.0
+    eng.start_calibration()
+    spin(6.5)
+    state("C5_svm_duels", shots=("default", "small"))
+
     # D. numbers model, robot address that nothing answers on (long error text)
     win.select_model("숫자0-5_전체")
     eng.link.close()
@@ -194,6 +203,9 @@ def main() -> int:
     scene_file(scene_dir, 2, wave[:2])               # radial_dev
     scene_file(scene_dir, 6, [{"name": "잘못", "kind": "motion", "pulses": [9999, 800, 800, 800, 800, 1500],
                                "running_time": 300}])                    # fist: thumb out of range
+    set_dir = os.path.join(scene_dir, "인형 동작")     # a second set to switch to
+    os.makedirs(set_dir, exist_ok=True)
+    scene_file(set_dir, 0, wave)
     eng.cfg["theater"]["folder"] = scene_dir
     eng.sender.set_endpoint(None)
     win.select_model("500그루")

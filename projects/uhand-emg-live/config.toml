@@ -29,7 +29,7 @@ hold = 3
 
 # 인형극 모드: 확정된 동작에 해당하는 공연 파일(uHandMotionCreator 로 만든 .uhjson)을 반복 재생합니다.
 [theater]
-folder = "sequences"     # 공연 파일을 넣는 폴더 (이 파일 기준 상대 경로)
+folder = "sequences"     # 공연 파일을 넣는 폴더 (이 파일 기준 상대 경로). 안의 폴더 하나가 화면에서 고르는 공연 세트 하나
 library = "../uhand-motion-creator/examples/sequences"  # 화면에서 동작마다 골라 쓸 수 있는 공연 파일이 모여 있는 폴더 (없어도 됨)
 led = true               # false 이면 장면의 LED 카드를 건너뜀
 buzzer = true            # false 이면 소리는 내지 않고 시간만 지킴

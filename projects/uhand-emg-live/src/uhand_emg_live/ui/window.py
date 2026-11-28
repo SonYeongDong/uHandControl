@@ -234,8 +234,8 @@ class MainWindow(QMainWindow):
         theater = mode == "theater"
         for w in (self.ahead_label, self.ahead, self.ahead_text, self.axes):
             w.setVisible(not theater)
-        self.scene_head.setVisible(theater)
-        self.scene_box.setVisible(theater)
+        for w in (self.set_label, self.sets, self.scene_head, self.scene_box):
+            w.setVisible(theater)
         if theater:
             self._fill_scene_rows()
         self.hand.setToolTip("오른쪽 드래그로 회전 · 휠로 확대\n" + (
@@ -287,6 +287,29 @@ class MainWindow(QMainWindow):
             at = next((i for i in range(1, pick.count()) if pick.itemData(i) == info.picked), 0)
             pick.setCurrentIndex(at)
             pick.blockSignals(False)
+        self._fill_sets()
+
+    def _fill_sets(self) -> None:
+        """The sets to switch to, showing the one the gestures play now. Files picked one by one
+        into something that is no set show as "직접 고름"."""
+        names = [name for name, _ in self.engine.scene_sets()]
+        now = self.engine.scene_set()
+        self.sets.blockSignals(True)
+        self.sets.clear()
+        for name in names:
+            self.sets.addItem(name, name)
+        if now is None:
+            self.sets.addItem("직접 고름", "")
+        self.sets.setCurrentIndex(names.index(now) if now in names else self.sets.count() - 1)
+        self.sets.blockSignals(False)
+
+    def _pick_set(self) -> None:
+        name = self.sets.currentData()
+        if name:
+            self.notes["file"] = ""
+            self.engine.set_scene_set(name)
+        self._fill_scene_rows()
+        self._note_scenes(True)
 
     def _pick_scene(self, key: str) -> None:
         path = self.scene_rows[key][2].currentData()
@@ -556,7 +579,18 @@ class MainWindow(QMainWindow):
         p.body.addLayout(ahead)
         self.axes = AxisBars()
         p.body.addWidget(self.axes)
-        # puppet show: which scene file each gesture plays (scrolls when the window is short)
+        # puppet show: the set of scene files, then which file each gesture plays (scrolls when the window is short)
+        sets = QHBoxLayout()
+        self.set_label = muted("공연 세트", wrap=False)
+        sets.addWidget(self.set_label)
+        self.sets = QComboBox()
+        self.sets.setMinimumWidth(80)
+        self.sets.setFixedHeight(24)
+        self.sets.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.sets.setToolTip("모든 동작의 공연 파일을 한 번에 바꿉니다. 세트는 공연 파일 폴더(sequences) 안의 폴더입니다")
+        self.sets.activated.connect(self._pick_set)
+        sets.addWidget(self.sets, 1)
+        p.body.addLayout(sets)
         self.scene_head = muted("동작마다 재생할 공연 파일", wrap=False)
         p.body.addWidget(self.scene_head)
         inner = QWidget()
@@ -703,14 +737,14 @@ class MainWindow(QMainWindow):
             self.truth.set("")
             self.cal_note.setText("")
             return
-        self.cal_btn.setText("착용 보정 시작 (약 40초)")
+        self.cal_btn.setText(f"착용 보정 시작 ({m.calibration_hint})")
         self.cal_bar.setValue(0)
         if m.needs_calibration:
             if st.calib_note:
                 self.cal_note.setText(st.calib_note)
                 self.cal_note.setStyleSheet(f"color: {MUTED if st.calibrated else LEVEL_COLOR['warn']};")
             elif not st.calibrated:
-                self.cal_note.setText("보정 전: 학습 때 기준을 써서 판정이 부정확합니다")
+                self.cal_note.setText(m.uncalibrated_note)
                 self.cal_note.setStyleSheet(f"color: {LEVEL_COLOR['warn']};")
         else:
             self.cal_note.setText("")
@@ -718,7 +752,8 @@ class MainWindow(QMainWindow):
         self.bars.set(list(st.gestures), None if stale else st.proba)
         if stale:
             self.p_dec.lamp.set("warn")
-            self._no_decision("판정을 기다리는 중" if st.health.ok else "암밴드 신호가 없어 판정할 수 없습니다")
+            waiting = "착용 보정이 필요합니다" if m.needs_calibration and not st.calibrated else "판정을 기다리는 중"
+            self._no_decision(waiting if st.health.ok else "암밴드 신호가 없어 판정할 수 없습니다")
             self.pic.set_gesture("rest", MUTED, dim=True)
             self._draw_truth(None)
             return

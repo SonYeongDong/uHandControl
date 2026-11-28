@@ -12,52 +12,28 @@
   },
   "cards": [
     {
-      "kind": "motion",
-      "name": "초기동작",
-      "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 100
+      "kind": "led",
+      "name": "누락 표시 · 빨강",
+      "red": 255,
+      "green": 0,
+      "blue": 0,
+      "brightness": 50
+    },
+    {
+      "kind": "buzzer",
+      "name": "동작 번호 연속음",
+      "frequency": 196,
+      "running_time": 100,
+      "continuous": true
     },
     {
       "kind": "motion",
-      "name": "내리기",
+      "name": "표시할 손가락 굽히기",
       "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 300
-    },
-    {
-      "kind": "motion",
-      "name": "왼다리+오른팔 들기",
-      "pulses": [
-        1920,
-        1560,
+        800,
         2000,
-        1560,
+        800,
         2000,
-        1500
-      ],
-      "running_time": 400
-    },
-    {
-      "kind": "motion",
-      "name": "왼다리+오른팔 들기",
-      "pulses": [
-        1920,
-        1560,
-        2000,
-        1560,
         2000,
         1500
       ],
@@ -65,218 +41,23 @@
     },
     {
       "kind": "motion",
-      "name": "내리기",
+      "name": "손가락 펴기",
       "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 300
-    },
-    {
-      "kind": "motion",
-      "name": "오른다리+왼팔 들기",
-      "pulses": [
-        1920,
+        800,
         2000,
-        1560,
         2000,
-        1560,
-        1500
-      ],
-      "running_time": 400
-    },
-    {
-      "kind": "motion",
-      "name": "오른다리+왼팔 들기",
-      "pulses": [
-        1920,
         2000,
-        1560,
-        2000,
-        1560,
-        1500
-      ],
-      "running_time": 100
-    },
-    {
-      "kind": "motion",
-      "name": "내리기",
-      "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 300
-    },
-    {
-      "kind": "motion",
-      "name": "왼다리+오른팔 들기",
-      "pulses": [
-        1920,
-        1560,
-        2000,
-        1560,
-        2000,
-        1500
-      ],
-      "running_time": 400
-    },
-    {
-      "kind": "motion",
-      "name": "왼다리+오른팔 들기",
-      "pulses": [
-        1920,
-        1560,
-        2000,
-        1560,
         2000,
         1500
       ],
       "running_time": 100
-    },
-    {
-      "kind": "motion",
-      "name": "내리기",
-      "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 300
-    },
-    {
-      "kind": "motion",
-      "name": "오른다리+왼팔 들기",
-      "pulses": [
-        1920,
-        2000,
-        1560,
-        2000,
-        1560,
-        1500
-      ],
-      "running_time": 400
-    },
-    {
-      "kind": "motion",
-      "name": "오른다리+왼팔 들기",
-      "pulses": [
-        1920,
-        2000,
-        1560,
-        2000,
-        1560,
-        1500
-      ],
-      "running_time": 100
-    },
-    {
-      "kind": "motion",
-      "name": "내리기",
-      "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 300
-    },
-    {
-      "kind": "motion",
-      "name": "왼다리+오른팔 들기",
-      "pulses": [
-        1920,
-        1560,
-        2000,
-        1560,
-        2000,
-        1500
-      ],
-      "running_time": 400
-    },
-    {
-      "kind": "motion",
-      "name": "왼다리+오른팔 들기",
-      "pulses": [
-        1920,
-        1560,
-        2000,
-        1560,
-        2000,
-        1500
-      ],
-      "running_time": 100
-    },
-    {
-      "kind": "motion",
-      "name": "내리기",
-      "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 300
-    },
-    {
-      "kind": "motion",
-      "name": "오른다리+왼팔 들기",
-      "pulses": [
-        1920,
-        2000,
-        1560,
-        2000,
-        1560,
-        1500
-      ],
-      "running_time": 400
-    },
-    {
-      "kind": "motion",
-      "name": "오른다리+왼팔 들기",
-      "pulses": [
-        1920,
-        2000,
-        1560,
-        2000,
-        1560,
-        1500
-      ],
-      "running_time": 100
-    },
-    {
-      "kind": "motion",
-      "name": "복귀",
-      "pulses": [
-        1920,
-        1560,
-        1560,
-        1560,
-        1560,
-        1500
-      ],
-      "running_time": 700
     }
   ],
   "editor": {
     "next_name_serials": {
-      "motion": 33,
-      "buzzer": 1,
-      "led": 1
+      "motion": 3,
+      "buzzer": 2,
+      "led": 2
     }
   },
   "extensions": {}

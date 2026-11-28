@@ -374,6 +374,144 @@ class ForestView(QWidget):
         self.votes.push(d, gesture)
 
 
+class SvmMarginView(QWidget):
+    """An SVM's decision as the textbook draws it, one graph per gesture: that gesture against
+    each of the others. The horizontal axis is a duel's decision value, so nothing is projected:
+    the solid line is the boundary (0), the dashed lines are the margin (-1 and +1), and the
+    support vectors of a duel sit exactly on those lines (a circle each side, larger for more).
+    The outlined dot is the live signal in that duel: right of the boundary the row's gesture
+    wins, and its distance from the boundary is the margin. Most wins is the answer."""
+
+    TITLE = "동작별 1대1 대결과 마진"
+    HINT = ("줄마다 그 동작 대 다른 동작들 · 실선 = 경계, 점선 = 마진, 그 위의 원 = 서포트 벡터 · "
+            "테두리 있는 점 = 지금 신호(상대 동작의 색), 오른쪽이면 이김")
+    SPAN = 2.5                  # decision values drawn; beyond it a dot stays at the edge
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.keys: list[str] = []
+        self.pairs: list[tuple[int, int]] = []
+        self.support = np.zeros((0, 0), int)           # [i, j]: support vectors of gesture i in its duel with j
+        self.total = 0
+        self.margin: np.ndarray | None = None          # [i, j] > 0: gesture i beats gesture j, by that much
+        self.confirmed: str | None = None
+        self.setMinimumSize(200, 190)
+
+    def set_model(self, model: GestureModel) -> None:
+        data = model.view_data()
+        self.keys, self.pairs, self.total = list(model.gestures), list(data["pairs"]), int(data["total"])
+        self.support = np.zeros((len(self.keys), len(self.keys)), int)
+        for (i, j), (a, b) in zip(self.pairs, data["support"]):
+            self.support[i, j], self.support[j, i] = a, b
+        self.clear_live()
+
+    def clear_live(self) -> None:
+        self.margin = None
+        self.confirmed = None
+        self.update()
+
+    def push(self, d: Decision, gesture: str | None) -> None:
+        duels = d.view.get("duels")
+        if duels is None:
+            return
+        m = np.zeros((len(self.keys), len(self.keys)))
+        for (i, j), v in zip(self.pairs, duels):
+            m[i, j], m[j, i] = v, -v
+        self.margin, self.confirmed = m, gesture
+        self.update()
+
+    def paintEvent(self, ev) -> None:
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        n = len(self.keys)
+        if n < 2 or self.margin is None:
+            p.setPen(QColor(MUTED))
+            p.drawText(self.rect(), Qt.AlignCenter, "판정을 기다리는 중")
+            p.end()
+            return
+        f = QFont(self.font())
+        f.setPointSize(9)
+        small = QFont(f)
+        small.setPointSize(8)
+        p.setFont(f)
+        chip, name_w, count_w, gap, head_h, axis_h = 12, 92, 40, 6, 20, 14
+        row_h = (self.height() - head_h - axis_h - gap * (n - 1)) / n
+        x0, width = name_w, self.width() - name_w - count_w - 6
+
+        def at(value: float) -> float:
+            return x0 + width * (float(np.clip(value, -self.SPAN, self.SPAN)) + self.SPAN) / (2 * self.SPAN)
+
+        wins = (self.margin > 0).sum(axis=1)
+        top = int(np.argmax(wins))
+        p.setPen(QColor(MUTED))
+        p.drawText(QRectF(0, 0, self.width(), head_h), Qt.AlignLeft | Qt.AlignVCenter, fit(
+            p, self.width(), f"1대1 대결 {len(self.pairs)}개 · 서포트 벡터 {self.total:,}개 · 1등 {wins[top]}승",
+            f"대결 {len(self.pairs)}개 · 서포트 벡터 {self.total:,}개", f"대결 {len(self.pairs)}개"))
+        p.setFont(small)
+        for value, text in ((-1, "−1"), (0, "경계"), (1, "+1")):
+            p.drawText(QRectF(at(value) - 20, head_h, 40, axis_h), Qt.AlignCenter, text)
+        p.drawText(QRectF(x0, head_h, 30, axis_h), Qt.AlignLeft | Qt.AlignVCenter, "◂ 짐")
+        p.drawText(QRectF(x0 + width - 36, head_h, 36, axis_h), Qt.AlignRight | Qt.AlignVCenter, "이김 ▸")
+        most = max(1, int(self.support.max()))
+        lane = (row_h - 6) / (n - 1)
+        dot = float(np.clip(lane * 0.42, 2.0, 3.6))
+        for i, key in enumerate(self.keys):
+            y = head_h + axis_h + i * (row_h + gap)
+            lead = i == top
+            col = ink(gestures.colour(key))
+            # the name, with the colour this gesture has in the other rows
+            p.setPen(Qt.NoPen)
+            p.setBrush(col)
+            p.drawRoundedRect(QRectF(0, y + (row_h - 8) / 2, 8, 8), 2, 2)
+            p.setFont(f)
+            p.setPen(QColor(TEXT if lead else MUTED))
+            p.drawText(QRectF(chip, y, name_w - chip - 6, row_h), Qt.AlignVCenter | Qt.AlignLeft, gestures.name(key))
+            # the graph: a well, the margin as a white band, its two lines dashed, the boundary solid
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(BG))
+            p.drawRoundedRect(QRectF(x0 - 4, y, width + 8, row_h), 4, 4)
+            p.setBrush(QColor("#ffffff"))
+            p.drawRect(QRectF(at(-1), y + 1, at(1) - at(-1), row_h - 2))
+            if key == self.confirmed:                        # the gesture the screen has settled on
+                p.setBrush(Qt.NoBrush)
+                p.setPen(QPen(col, 1.5))
+                p.drawRoundedRect(QRectF(x0 - 4, y, width + 8, row_h), 4, 4)
+            p.setPen(QPen(QColor(IDLE), 1, Qt.DashLine))
+            for value in (-1, 1):
+                p.drawLine(QLineF(at(value), y + 2, at(value), y + row_h - 2))
+            p.setPen(QPen(QColor(TEXT), 1.2))
+            p.drawLine(QLineF(at(0), y + 1, at(0), y + row_h - 1))
+            worst = None
+            for k, j in enumerate(j for j in range(n) if j != i):
+                cy = y + 3 + lane * (k + 0.5)
+                other = ink(gestures.colour(self.keys[j]))
+                # the duel's support vectors, on the margin lines: this gesture's right, the other's left
+                p.setPen(Qt.NoPen)
+                for value, colour, count in ((1, col, self.support[i, j]), (-1, other, self.support[j, i])):
+                    r = float(np.clip(math.sqrt(count / most) * lane * 0.5, 1.2, lane * 0.5))
+                    c = QColor(colour)
+                    c.setAlpha(105)
+                    p.setBrush(c)
+                    p.drawEllipse(QPointF(at(value), cy), r, r)
+                # the live signal: a stem from the boundary as long as the margin, and the dot
+                m = float(self.margin[i, j])
+                worst = m if worst is None else min(worst, m)
+                p.setPen(QPen(col if m > 0 else other, 1.6))
+                p.drawLine(QLineF(at(0), cy, at(m), cy))
+                p.setPen(QPen(QColor(TEXT), 0.9))
+                p.setBrush(other)
+                p.drawEllipse(QPointF(at(m), cy), dot, dot)
+            # wins, and the decision value of this gesture's worst duel (positive: it wins them all)
+            right = QRectF(self.width() - count_w, y, count_w, row_h)
+            p.setFont(f)
+            p.setPen(QColor(TEXT if lead else MUTED))
+            p.drawText(right.adjusted(0, 0, 0, -row_h / 2), Qt.AlignBottom | Qt.AlignRight, f"{wins[i]}승")
+            p.setFont(small)
+            p.setPen(QColor(MUTED))
+            p.drawText(right.adjusted(0, row_h / 2, 0, 0), Qt.AlignTop | Qt.AlignRight, f"{worst:+.1f}".replace("-", "−"))
+        p.end()
+
+
 class PlainView(QLabel):
     """For a model without a view of its own."""
 
@@ -395,4 +533,4 @@ class PlainView(QLabel):
         pass
 
 
-VIEWS = {"map": SignalMapView, "votes": ForestView, "bars": PlainView}
+VIEWS = {"map": SignalMapView, "votes": ForestView, "duels": SvmMarginView, "bars": PlainView}
