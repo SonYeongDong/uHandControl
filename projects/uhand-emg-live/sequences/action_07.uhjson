@@ -1,0 +1,64 @@
+{
+  "format": "uhand-motion-sequence",
+  "schema_version": 2,
+  "created_with": {
+    "application": "uHandMotionCreator",
+    "version": "1.0.1"
+  },
+  "units": {
+    "pulse": "us",
+    "running_time": "ms",
+    "frequency": "Hz"
+  },
+  "cards": [
+    {
+      "kind": "led",
+      "name": "누락 표시 · 빨강",
+      "red": 255,
+      "green": 0,
+      "blue": 0,
+      "brightness": 50
+    },
+    {
+      "kind": "buzzer",
+      "name": "동작 번호 연속음",
+      "frequency": 262,
+      "running_time": 100,
+      "continuous": true
+    },
+    {
+      "kind": "motion",
+      "name": "표시할 손가락 굽히기",
+      "pulses": [
+        800,
+        2000,
+        800,
+        800,
+        800,
+        1500
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "손가락 펴기",
+      "pulses": [
+        800,
+        2000,
+        2000,
+        2000,
+        2000,
+        1500
+      ],
+      "running_time": 100
+    }
+  ],
+  "editor": {
+    "next_name_serials": {
+      "motion": 3,
+      "buzzer": 2,
+      "led": 2
+    }
+  },
+  "extensions": {}
+}

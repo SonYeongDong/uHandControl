@@ -1,0 +1,4 @@
+# pictures saved by tools/ui_check.py
+tools/_shots/
+# scene files picked on the screen (per machine)
+sequences/_chosen.json
