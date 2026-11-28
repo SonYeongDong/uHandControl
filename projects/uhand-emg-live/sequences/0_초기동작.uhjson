@@ -1,0 +1,36 @@
+{
+  "format": "uhand-motion-sequence",
+  "schema_version": 2,
+  "created_with": {
+    "application": "uHandMotionCreator",
+    "version": "1.0.1"
+  },
+  "units": {
+    "pulse": "us",
+    "running_time": "ms",
+    "frequency": "Hz"
+  },
+  "cards": [
+    {
+      "kind": "motion",
+      "name": "초기동작",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1560,
+        1560,
+        1500
+      ],
+      "running_time": 3000
+    }
+  ],
+  "editor": {
+    "next_name_serials": {
+      "motion": 2,
+      "buzzer": 1,
+      "led": 1
+    }
+  },
+  "extensions": {}
+}

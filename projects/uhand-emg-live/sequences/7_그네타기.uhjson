@@ -1,0 +1,205 @@
+{
+  "format": "uhand-motion-sequence",
+  "schema_version": 2,
+  "created_with": {
+    "application": "uHandMotionCreator",
+    "version": "1.0.1"
+  },
+  "units": {
+    "pulse": "us",
+    "running_time": "ms",
+    "frequency": "Hz"
+  },
+  "cards": [
+    {
+      "kind": "motion",
+      "name": "초기동작",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1560,
+        1560,
+        1500
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "오른쪽으로 기울임",
+      "pulses": [
+        1920,
+        1900,
+        1900,
+        1560,
+        1560,
+        1650
+      ],
+      "running_time": 500
+    },
+    {
+      "kind": "motion",
+      "name": "오른쪽으로 기울임",
+      "pulses": [
+        1920,
+        1900,
+        1900,
+        1560,
+        1560,
+        1650
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "왼쪽으로 기울임",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1900,
+        1900,
+        1250
+      ],
+      "running_time": 600
+    },
+    {
+      "kind": "motion",
+      "name": "왼쪽으로 기울임",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1900,
+        1900,
+        1250
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "오른쪽으로 기울임",
+      "pulses": [
+        1920,
+        1900,
+        1900,
+        1560,
+        1560,
+        1650
+      ],
+      "running_time": 600
+    },
+    {
+      "kind": "motion",
+      "name": "오른쪽으로 기울임",
+      "pulses": [
+        1920,
+        1900,
+        1900,
+        1560,
+        1560,
+        1650
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "왼쪽으로 기울임",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1900,
+        1900,
+        1250
+      ],
+      "running_time": 600
+    },
+    {
+      "kind": "motion",
+      "name": "왼쪽으로 기울임",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1900,
+        1900,
+        1250
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "오른쪽으로 기울임",
+      "pulses": [
+        1920,
+        1900,
+        1900,
+        1560,
+        1560,
+        1650
+      ],
+      "running_time": 600
+    },
+    {
+      "kind": "motion",
+      "name": "오른쪽으로 기울임",
+      "pulses": [
+        1920,
+        1900,
+        1900,
+        1560,
+        1560,
+        1650
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "왼쪽으로 기울임",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1900,
+        1900,
+        1250
+      ],
+      "running_time": 600
+    },
+    {
+      "kind": "motion",
+      "name": "왼쪽으로 기울임",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1900,
+        1900,
+        1250
+      ],
+      "running_time": 100
+    },
+    {
+      "kind": "motion",
+      "name": "복귀",
+      "pulses": [
+        1920,
+        1560,
+        1560,
+        1560,
+        1560,
+        1500
+      ],
+      "running_time": 700
+    }
+  ],
+  "editor": {
+    "next_name_serials": {
+      "motion": 71,
+      "buzzer": 1,
+      "led": 1
+    }
+  },
+  "extensions": {}
+}

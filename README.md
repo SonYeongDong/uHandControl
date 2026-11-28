@@ -49,6 +49,7 @@ Mac에서는 현재 소스의 런처를 열면 각 프로그램을 처음 실행
 | --- | --- | --- |
 | uHandMotionCreator | Windows · macOS | 카드 편집·저장·재생, 서버 연결, Python 코드 생성. [편집 화면 따라 하기](projects/uhand-motion-creator/README.md) |
 | uHandVirtualServer | Windows · macOS | 가상 3D 손, 부저, LED와 이벤트 로그 확인. [가상 서버 화면 따라 하기](projects/uhand-virtual-server/README.md) |
+| uHandEmgLive | Windows | EMG 암밴드의 손동작을 판정해 가상·실물 로봇손을 움직입니다. 실행기에는 Windows에서만 나타나고, 테스트는 따로 pytest로 실행합니다. [화면과 사용 방법](projects/uhand-emg-live/README.md) |
 | uHandClientModule | Windows · macOS Python | 함수 여섯 개로 가상·실물 서버 제어. [설치·예제·API 설명](projects/uhand-client-module/README.md) |
 | uHandServer | 로봇손의 Raspberry Pi OS | 실물 서보·부저·LED 구동. [서버 사용 및 제조사 서비스 전환](projects/uhand-server/README.md) |
 

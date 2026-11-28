@@ -22,7 +22,7 @@ WINDOWS = sys.platform == "win32"
 MACOS = sys.platform == "darwin"
 PYTHON = ENV / "Scripts" / "python.exe" if WINDOWS else ENV / "bin" / "python"
 GUI_PYTHON = PYTHON.with_name("pythonw.exe") if WINDOWS else PYTHON
-READY = ENV / f".uhand-{VERSION}-{sys.platform}-desktop4-ready"
+READY = ENV / f".uhand-{VERSION}-{sys.platform}-desktop5-ready"
 LOG = ROOT / "build" / "launcher.log"
 PACKAGES = (
     "shared/uhand-server-lifecycle", "shared/uhand-about", "shared/uhand-model",
@@ -31,6 +31,10 @@ PACKAGES = (
 if sys.platform == "darwin":
     PACKAGES += ("shared/uhand-desktop-audio",)
 APPS = {"uHandVirtualServer": "uhand_virtual_server", "uHandMotionCreator": "uhand_motion_creator"}
+if WINDOWS:
+    # uHandEmgLive is verified on Windows only; elsewhere it is neither installed nor offered.
+    PACKAGES += ("projects/uhand-emg-live",)
+    APPS["uHandEmgLive"] = "uhand_emg_live"
 
 
 def install_python():
@@ -77,6 +81,8 @@ def prepare():
                             "--constraint", str(ROOT / "requirements-runtime.lock"),
                             *PACKAGES], cwd=build_root, check=True)
         imports = "import uhand_motion_creator.ui, uhand_virtual_server.ui"
+        if "uHandEmgLive" in APPS:
+            imports += ", uhand_emg_live.ui.window"
         if sys.platform == "darwin":
             imports += ", uhand_desktop_audio, pygame.mixer"
         subprocess.run([str(PYTHON), "-c", imports], cwd=ROOT, check=True)
@@ -492,7 +498,10 @@ def main():
     for name, subtitle, accent, tint in (
         ("uHandMotionCreator", "로봇손 동작 시퀀스 편집", "#285bea", "#edf3ff"),
         ("uHandVirtualServer", "가상 로봇손 제어 테스트", "#cc3344", "#fff1f3"),
+        ("uHandEmgLive", "근전도 손동작으로 로봇손 움직이기", "#12936b", "#eafaf3"),
     ):
+        if name not in APPS:
+            continue
         card = LaunchCard(pane, name, subtitle, accent, tint,
                           lambda label=name: start(label), max(1, scale), family)
         card.pack(fill="x", pady=(0, size(6)))
