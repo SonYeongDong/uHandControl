@@ -124,7 +124,7 @@ class SequenceWindow(QDialog):
         return True
 
     def refresh(self):
-        e=self.editor;rows=e.list.selected_rows();current=e.selected;active=e.is_running()
+        e=self.editor;rows=e.list.selected_rows();current=e.selected;active=e.sequence_locked()
         changed=self.list.currentRow()!=current
         auto_scroll=self.list.hasAutoScroll()
         self.list.setAutoScroll(False)
@@ -149,12 +149,13 @@ class SequenceWindow(QDialog):
         finally:
             self.list.setAutoScroll(auto_scroll)
         self.title.setText(f"동작 시퀀스 ({len(self.items):,}) · {e.remaining_label.text()}")
-        self.list.setEnabled(not active)
+        self.list.setEnabled(not e.is_running())
+        self.list.set_read_only(e.live.active)
         self.remove.setText(f"선택 삭제 ({len(rows)})" if rows else "선택 삭제")
         self.remove.setMinimumWidth(max(124,self.remove.fontMetrics().horizontalAdvance(self.remove.text())+26))
         self.remove.setEnabled(bool(rows) and not active)
         self.up.setEnabled(not active and current>0);self.down.setEnabled(not active and 0<=current<len(self.items)-1)
-        self.status.setText("재생 중 · 목록 편집은 잠시 사용할 수 없습니다." if active else
+        self.status.setText("실시간 제어 중 · 목록 읽기 전용" if e.live.active else "재생 중 · 목록 편집은 잠시 사용할 수 없습니다." if active else
             f"현재 동작 {current+1} · 메인 창의 동작 파라미터에서 수정한 뒤 ‘선택 동작에 적용’을 누르세요." if current>=0 else
             "동작을 선택하면 메인 창에 파라미터를 표시합니다. 선택이 없으면 새 동작은 맨 뒤에 추가됩니다.")
     def closeEvent(self,event):

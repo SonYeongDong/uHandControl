@@ -10,6 +10,7 @@ class MotionList(QListWidget):
 
     def __init__(self,parent=None,vertical=False):
         super().__init__(parent)
+        self.read_only = False
         self.vertical=vertical
         self._pressed_row=-1;self._press=None;self._source=-1;self._snapshot=None
         self._sources=();self._preserve_selection=False
@@ -17,6 +18,18 @@ class MotionList(QListWidget):
         self._scroll_timer=QTimer(self);self._scroll_timer.setInterval(60)
         self._scroll_timer.timeout.connect(self._auto_scroll)
         self.setToolTip(f"Shift+클릭으로 범위를 선택한 뒤 끌어 이동합니다. Esc로 취소합니다. Delete: 삭제 · {PREFIX}C/X/V: 복사/잘라내기/붙여넣기.")
+
+    def set_read_only(self, locked):
+        self.read_only = locked
+        if locked:
+            self._end_drag()
+
+    def viewportEvent(self, event):
+        if getattr(self, "read_only", False) and event.type() in (
+                QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease,
+                QEvent.Type.MouseButtonDblClick, QEvent.Type.MouseMove, QEvent.Type.ContextMenu):
+            return True
+        return super().viewportEvent(event)
 
     def selected_rows(self):
         return tuple(sorted(self.row(item) for item in self.selectedItems()))
@@ -85,6 +98,8 @@ class MotionList(QListWidget):
         return None
 
     def keyPressEvent(self,event):
+        if self.read_only:
+            event.accept();return
         action=self.shortcut_action(event)
         if action:
             self._end_drag()

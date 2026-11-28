@@ -22,6 +22,9 @@ class RemoteUi:
     def is_running(self):
         return self.playback is not None or self.remote_running
 
+    def sequence_locked(self):
+        return self.is_running() or self.live.active
+
     def show_server_panel(self):
         if self.server_panel is None:self.server_panel = ServerPanel(self)
         self.server_panel.refresh()
@@ -41,7 +44,8 @@ class RemoteUi:
     def refresh_remote_controls(self, *_):
         self.refresh_file_state()
         if not hasattr(self, "remote_apply_button"):return
-        ready = self.remote.connected and not self.remote.busy and not self.is_running() and not self.remote_disconnect_pending
+        self.live.refresh()
+        ready = self.remote.connected and not self.remote.busy and not self.sequence_locked() and not self.live.pending and not self.remote_disconnect_pending
         direct = self.server_panel is not None and self.server_panel.direct.isChecked()
         self.remote_apply_button.setEnabled(ready and direct and self.valid_remote_draft())
         self.remote_mute_button.setEnabled(ready)
@@ -64,6 +68,7 @@ class RemoteUi:
     def disconnect_remote(self):
         if not self.remote.connected and not self.remote.busy:return
         self.remote_disconnect_pending = True
+        self.live.reset_session()
         if self.remote.busy:
             self.remote.stop()
             self.remote_message("현재 요청 완료 후 부저를 끄고 연결을 해제합니다.")
@@ -89,7 +94,7 @@ class RemoteUi:
         self.submit_remote("run", cards=((-1, LED(name="LED 끄기")),), cleanup=False)
 
     def run_remote(self, scope):
-        if not self.remote.connected or self.remote.busy or self.is_running() or not self.sequence.items:return
+        if not self.remote.connected or self.remote.busy or self.sequence_locked() or self.live.pending or not self.sequence.items:return
         if scope != "all" and (self.selected < 0 or not self.list.selected_rows()):return
         if not self.confirm_discard():return
         start = 0 if scope == "all" else self.selected
@@ -174,6 +179,16 @@ class RemoteUi:
                 self.playback_status.setText(message);self.remote_message(message)
                 self.schedule_sequence_sync()
             elif event["type"] == "done":
+                if event["operation"] == "live":
+                    self.live.completed(event)
+                    if self.remote_disconnect_pending:
+                        if self.remote.connected:
+                            self.submit_remote("disconnect")
+                        else:
+                            self.remote_disconnect_pending = False
+                    if not self.live.active or not self.remote.connected or self.remote_disconnect_pending:
+                        self.refresh_actions()
+                    continue
                 if self.remote_running:
                     if self.playing_row >= 0:
                         self.list.item(self.playing_row).setData(Qt.ItemDataRole.UserRole+1, False)
@@ -210,6 +225,7 @@ class RemoteUi:
                     self.submit_remote("disconnect")
                 self.remote_last_query = perf_counter()
                 self.refresh_actions();self.refresh_remote_controls()
+        self.live.dispatch()
         if self.remote_close_pending and not self.remote.busy:
             if self.remote.connected:
                 self.disconnect_remote()

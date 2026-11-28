@@ -96,7 +96,8 @@ class ServerPanel(QDialog):
         self.connect_button.setEnabled(not s.connected and idle)
         self.disconnect_button.setEnabled(s.connected and not e.remote_disconnect_pending)
         self.status_button.setEnabled(ready)
-        self.direct.setEnabled(s.connected and idle)
+        ready = ready and not e.live.active and not e.live.pending
+        self.direct.setEnabled(ready)
         if not s.connected:self.direct.setChecked(False)
         self.apply_button.setEnabled(ready and self.direct.isChecked() and e.valid_remote_draft())
         self.mute_button.setEnabled(ready)
@@ -105,6 +106,6 @@ class ServerPanel(QDialog):
         self.selected_button.setEnabled(ready and selected)
         self.current_button.setEnabled(ready and selected)
         self.all_button.setEnabled(ready and bool(e.sequence.items))
-        self.repeat.setEnabled(idle)
+        self.repeat.setEnabled(idle and not e.live.active)
         self.stop_button.setEnabled(e.remote_running and not s.cancel.is_set())
         self.connection.setText(("접속 주소: " + e.remote_endpoint) if s.connected else "연결 안 됨")

@@ -9,6 +9,7 @@ import re
 from dataclasses import replace
 from .audio import create_audio
 from .remote_ui import RemoteUi
+from .live_controls import LiveControls
 from .file_ui import FileUi
 from .pulse_spin import PulseSpinBox
 from .motion import PULSE_LIMITS
@@ -263,7 +264,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.parameter_header.addWidget(self.reset_button, 0, 2)
         cl.addLayout(self.parameter_header)
         self.tabs=QTabBar();self.tabs.setExpanding(True)
-        for text in ("손동작","부저","삼색 LED"):self.tabs.addTab(text)
+        for text in ("손동작","부저","삼색 LED","실시간 제어"):self.tabs.addTab(text)
         self.tabs.setStyleSheet("QTabBar::tab {padding:7px 16px; background:#f0f4fa; color:#61728b; border-radius:5px;} QTabBar::tab:selected {background:#245eea; color:white;} QTabBar::tab:hover {background:#dce7ff; color:#182a45;}")
         cl.addWidget(self.tabs)
         self.parameter_stack = StableHeightStack()
@@ -303,7 +304,9 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.parameter_stack.addWidget(buzzer_parameters)
         self.led_editor = LedEditor()
         self.parameter_stack.addWidget(self.led_editor)
-        row=QHBoxLayout();row.addWidget(label("동작 이름"))
+        self.live = LiveControls(self)
+        self.parameter_stack.addWidget(self.live)
+        row=QHBoxLayout();self.name_label=label("동작 이름");row.addWidget(self.name_label)
         self.name=QLineEdit("동작 01");self.name.setMaxLength(60);row.addWidget(self.name);cl.addLayout(row)
         self.notice=label("값을 설정한 뒤 동작 추가를 누르세요.","notice");self.notice.setWordWrap(True);cl.addWidget(self.notice)
         self.add_button=button("+  동작 추가",self.add_motion,True)
@@ -368,7 +371,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.document_label.setMaximumWidth(600)
         self.document_label.setSizePolicy(QSizePolicy.Policy.Ignored,QSizePolicy.Policy.Preferred)
         footer.addWidget(self.document_label,1);layout.addLayout(footer)
-        self.viewport.axisSelected.connect(self.select_axis);self.viewport.pulseChanged.connect(lambda i,p:self.spins[i].setValue(p))
+        self.viewport.axisSelected.connect(self.select_axis);self.viewport.pulseChanged.connect(self.viewport_pulse)
         self.time.valueChanged.connect(self.editor_changed);self.name.textChanged.connect(self.editor_changed)
         self.tabs.currentChanged.connect(self.change_tab)
         self.continuous.toggled.connect(self.output_changed)
@@ -431,10 +434,11 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         help_menu=self.menuBar().addMenu("도움말");help_menu.addAction("사용 방법",self.help)
         add_about_action(self, "uHandMotionCreator", "로봇손 동작의 설계부터 실행까지", __version__)
     def help(self):
-        QMessageBox.information(self,"사용 방법",f"1. 손동작 / 부저 / 삼색 LED 탭을 선택합니다.\n2. 값을 편집하고 이름을 정해 동작을 추가합니다.\n3. 목록 선택 후 수정은 ‘선택 동작에 적용’으로 확정합니다.\n4. Shift+클릭으로 여러 카드를 선택한 뒤 함께 드래그할 수 있습니다.\n5. 시퀀스 재생으로 PC에서 확인하고 전체 코드를 복사합니다.\n6. 서버 연결·테스트에서 선택적으로 가상/실물 서버에 연결합니다.\n7. 직접 제어 모드를 켜고 서버에 적용하거나 저장 카드를 실행합니다.\n서버 정지는 현재 명령 완료 후 다음 카드 실행을 중단합니다.\n\n부저: 미리듣기를 눌러야 소리가 납니다.\nLED: 즉시 변경 후 다음 LED 카드까지 유지됩니다.\n탭 전환: 미적용 수정 확인 후 새 카드 작성을 시작합니다.\n\n자세 편집: 손가락 상하 / 손바닥 좌우 드래그\n카메라: 모든 모드에서 오른쪽 드래그로 회전 / 휠로 확대·축소\n파일 메뉴에서 JSON으로 저장({PREFIX}S)하고 다시 열 수 있습니다({PREFIX}O).")
+        QMessageBox.information(self,"사용 방법",f"1. 손동작 / 부저 / 삼색 LED 탭을 선택합니다.\n2. 값을 편집하고 이름을 정해 동작을 추가합니다.\n3. 목록 선택 후 수정은 ‘선택 동작에 적용’으로 확정합니다.\n4. Shift+클릭으로 여러 카드를 선택한 뒤 함께 드래그할 수 있습니다.\n5. 시퀀스 재생으로 PC에서 확인하고 전체 코드를 복사합니다.\n6. 서버 연결·테스트에서 선택적으로 가상/실물 서버에 연결합니다.\n7. 실시간 제어 탭에서 손·부저·LED를 조작하거나 직접 제어 모드를 켜고 서버에 적용하거나 저장 카드를 실행합니다.\n서버 정지는 현재 명령 완료 후 다음 카드 실행을 중단합니다.\n\n부저: 미리듣기를 눌러야 소리가 납니다.\nLED: 즉시 변경 후 다음 LED 카드까지 유지됩니다.\n탭 전환: 미적용 수정 확인 후 새 카드 작성을 시작합니다.\n\n자세 편집: 손가락 상하 / 손바닥 좌우 드래그\n카메라: 모든 모드에서 오른쪽 드래그로 회전 / 휠로 확대·축소\n파일 메뉴에서 JSON으로 저장({PREFIX}S)하고 다시 열 수 있습니다({PREFIX}O).")
     def draft(self):
-        if self.tabs.currentIndex()==1:return Buzzer(self.frequency.value(),self.buzzer_time.value(),self.name.text().strip(),self.continuous.isChecked())
-        if self.tabs.currentIndex()==2:return self.led_editor.card(self.name.text().strip())
+        tab = kind(self.baseline) if self.live.active else self.tabs.currentIndex()
+        if tab==1:return Buzzer(self.frequency.value(),self.buzzer_time.value(),self.name.text().strip(),self.continuous.isChecked())
+        if tab==2:return self.led_editor.card(self.name.text().strip())
         return Motion(tuple(s.value() for s in self.spins),self.time.value(),self.name.text().strip())
     def changed(self):
         try:return self.draft()!=self.baseline
@@ -450,12 +454,22 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
     def update_hint(self):
         axis=self.viewport.axis
         self.axis_hint.setText((AXES[axis]+" 선택 · "+("좌우 드래그 · YAW" if axis==5 else "위아래 드래그로 펄스 조정")) if self.viewport.edit_mode else "카메라 모드 · 좌/우 드래그로 회전 / 휠로 확대")
+    def viewport_pulse(self, index, value):
+        if self.live.active:
+            if self.live.available() and self.live.hand_state == "on":
+                self.live.axes[index].setValue(value)
+        else:
+            self.spins[index].setValue(value)
+
     def change_pulse(self,index,value):
         with QSignalBlocker(self.sliders[index]):self.sliders[index].setValue(value)
         if not self.loading:
             self.viewport.set_pulses([s.value() for s in self.spins]);self.editor_changed()
     def editor_changed(self,*_):
         if self.loading:return
+        if self.live.active:
+            self.add_button.setEnabled(False);self.apply_button.setEnabled(False)
+            return
         try:self.draft();valid=True
         except ValueError as exc:self.notice.setText(str(exc));valid=False
         if valid:self.notice.setText("편집 중 · 추가하거나 선택 동작에 적용하세요." if self.changed() else "목록의 선택 카드와 같은 값입니다." if self.selected>=0 else "값을 설정한 뒤 동작 추가를 누르세요.")
@@ -463,7 +477,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.apply_button.setEnabled(valid and not self.is_running() and self.selected>=0 and kind(self.sequence.items[self.selected])==self.tabs.currentIndex() and self.changed())
         self.refresh_remote_controls()
     def reset_parameters(self):
-        if self.is_running():return
+        if self.sequence_locked():return
         self.stop_sound()
         defaults=(Motion(),Buzzer(),LED())[self.tabs.currentIndex()]
         name=self.name.text();baseline=self.baseline
@@ -494,12 +508,42 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
     def next_name(self,index):
         return f"{('동작','부저','LED')[index]} {self.name_serials[index]:02d}"
 
+    def show_edit_controls(self, show):
+        for widget in (self.remote_buttons, self.reset_button, self.name_label, self.name,
+                       self.notice, self.add_button, self.apply_button):
+            widget.setVisible(show)
+        self.list.set_read_only(not show)
+        self.sequence_view_button.setEnabled(show)
+        self.schedule_sequence_sync()
+
     def change_tab(self,index):
         if self.loading:return
         previous=kind(self.baseline)
+        if index == 3:
+            if self.is_running():
+                with QSignalBlocker(self.tabs):
+                    self.tabs.setCurrentIndex(previous)
+                return
+            self.stop_sound()
+            self.parameter_stack.setCurrentIndex(3)
+            self.preview_stack.setCurrentIndex(0)
+            self.live.enter()
+            self.show_edit_controls(False)
+            self.refresh_actions()
+            return
+        if self.live.active:
+            self.live.leave()
+            self.show_edit_controls(True)
+            self.parameter_stack.setCurrentIndex(previous)
+            self.preview_stack.setCurrentIndex(previous)
+            if index == previous:
+                self.refresh_actions()
+                return
         # Validate the old draft before leaving its tab.
         with QSignalBlocker(self.tabs):self.tabs.setCurrentIndex(previous)
-        if not self.confirm_discard():return
+        if not self.confirm_discard():
+            self.refresh_actions()
+            return
         self.stop_sound()
         # Keep the current card as the insertion anchor when changing output type.
         defaults=(Motion(name=self.next_name(0)),Buzzer(name=self.next_name(1)),LED(name=self.next_name(2)))
@@ -551,7 +595,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.play_sound(self.frequency.value(),self.buzzer_time.value(),self.continuous.isChecked())
 
     def add_motion(self):
-        if self.is_running():return
+        if self.sequence_locked():return
         try:
             self.sequence.require_space(1)
             motion = self.draft()
@@ -563,7 +607,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
             motion=replace(motion,name=self.next_name(output))
         self.sequence.insert(index,motion);self.name_serials[output]+=1;self.show_inserted_cards((index,))
     def apply_motion(self):
-        if self.is_running():return
+        if self.sequence_locked():return
         if self.selected<0 or kind(self.sequence.items[self.selected])!=self.tabs.currentIndex():return
         try:self.sequence.replace(self.selected,self.draft())
         except ValueError as exc:self.notice.setText(str(exc));return
@@ -573,7 +617,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.load_motion(self.sequence.items[self.selected])
         self.refresh_actions()
     def select_motion(self,index):
-        if self.loading or self.is_running():return
+        if self.loading or self.sequence_locked():return
         if index==self.selected and (index<0 or self.baseline==self.sequence.items[index]):return
         if not self.confirm_discard():
             with QSignalBlocker(self.list):self.list.setCurrentRow(self.selected)
@@ -638,19 +682,19 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         else:self.load_motion(Motion(name=self.next_name(0)))
         self.refresh_actions()
     def refresh_actions(self):
-        n=len(self.sequence.items);has=self.selected>=0;active=self.is_running()
+        n=len(self.sequence.items);has=self.selected>=0;active=self.sequence_locked()
         self.remaining_label.setText(f"남은 카드 {self.sequence.remaining_cards:,}장")
         self.count.setText(f"동작 시퀀스 ({n})");self.empty.setVisible(n==0);self.selection_hint.setVisible(n>0)
         self.left.setEnabled(not active and has and self.selected>0);self.right.setEnabled(not active and has and self.selected<n-1)
-        self.refresh_delete_action();self.copy_button.setEnabled(has);self.generate_button.setEnabled(n>0)
+        self.refresh_delete_action();self.copy_button.setEnabled(has and not self.live.active);self.generate_button.setEnabled(n>0 and not self.live.active)
         self.preview.setPlainText(call_code(self.sequence.items[self.selected]) if has else "# 동작을 추가하고 선택하면\n# 호출 코드가 여기에 표시됩니다.")
         self.undo_action.setEnabled(not active and bool(self.sequence.undo_stack));self.redo_action.setEnabled(not active and bool(self.sequence.redo_stack))
         self.editor_changed();self.refresh_playback_actions();self.refresh_remote_controls()
     def move_motion(self,delta):
-        if self.is_running():return
+        if self.sequence_locked():return
         if self.selected>=0 and self.confirm_discard():self.refresh_list(self.sequence.move(self.selected,delta))
     def reorder_motion(self,indices,slot,focus=True):
-        if self.is_running():return
+        if self.sequence_locked():return
         current=self.selected;baseline=self.baseline
         draft=([spin.value() for spin in self.spins],self.time.value(),self.name.text(),self.frequency.value(),self.buzzer_time.value(),self.led_editor.card(),self.continuous.isChecked())
         positions=self.sequence.move_group(indices,slot)
@@ -675,7 +719,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
     def refresh_delete_action(self):
         if self.loading:return
         count=len(self.list.selected_rows())
-        self.remove.setEnabled(count>0 and not self.is_running())
+        self.remove.setEnabled(count>0 and not self.sequence_locked())
         self.refresh_playback_actions()
         self.remove.setText(f"삭제 ({count})" if count>1 else "삭제")
         self.remove.setToolTip(f"선택한 동작 {count}개 삭제" if count else "삭제할 동작을 선택하세요.")
@@ -686,7 +730,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
             self.sequence_window.status.setText(message)
 
     def card_command(self,action,view):
-        if self.is_running() or self.loading:return
+        if self.sequence_locked() or self.loading:return
         if view._items()!=self.sequence.items:
             self.sync_sequence_window();return
         if view is not self.list:
@@ -730,16 +774,16 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.sync_sequence_window()
 
     def delete_motion(self):
-        if self.is_running():return
+        if self.sequence_locked():return
         rows=self.list.selected_rows()
         if rows and self.confirm_discard():
             self.sequence.delete_group(rows)
             self.refresh_list(min(rows[0],len(self.sequence.items)-1))
     def undo(self):
-        if self.is_running():return
+        if self.sequence_locked():return
         if self.confirm_discard():self.sequence.undo();self.refresh_list(min(self.selected,len(self.sequence.items)-1))
     def redo(self):
-        if self.is_running():return
+        if self.sequence_locked():return
         if self.confirm_discard():self.sequence.redo();self.refresh_list(min(max(self.selected,0),len(self.sequence.items)-1))
     def show_sequence_window(self):
         if self.sequence_window is None:self.sequence_window=SequenceWindow(self)
@@ -756,7 +800,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
             self.select_motion(index)
 
     def select_from_sequence_window(self,index,rows):
-        if self.loading or self.is_running():
+        if self.loading or self.sequence_locked():
             self.sync_sequence_window();return
         if index!=self.selected:
             self.select_motion(index)
@@ -775,14 +819,14 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         if self.sequence.items:
             self.code_dialog=CodeDialog(self.sequence.items,self);self.code_dialog.open()
     def refresh_playback_actions(self):
-        active=self.is_running() or self.remote.busy
+        active=self.sequence_locked() or self.remote.busy
         self.play_from_start.setEnabled(bool(self.sequence.items) and not active)
         self.play_from_current.setEnabled(bool(self.list.selected_rows()) and self.selected>=0 and not active)
         self.play_stop.setEnabled(self.playback is not None or getattr(self,"sound_continuous",False))
         self.repeat_playback.setEnabled(not active)
 
     def start_playback(self,from_current=False):
-        if self.is_running() or self.remote.busy or not self.sequence.items:return
+        if self.sequence_locked() or self.remote.busy or not self.sequence.items:return
         index=self.selected if from_current else 0
         if index<0 or (from_current and not self.list.selected_rows()):return
         if not self.confirm_discard():return

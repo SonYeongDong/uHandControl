@@ -2,6 +2,7 @@
 import argparse
 from pathlib import Path
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 from PySide6.QtTest import QTest
 from uhand_about import AboutDialog
@@ -48,7 +49,10 @@ try:
     for mark in (window.findChild(QLabel, "appLogo"), dlg.findChild(QLabel, "mark")):
         assert not mark.pixmap().isNull()
         image = mark.grab().toImage()
-        assert image.pixelColor(8, image.height()//2).name() == expected
+        # Sample the colored field beside the U at any desktop scale.
+        actual_rgb = image.pixelColor(image.width() // 5, image.height() // 2).getRgb()[:3]
+        expected_rgb = QColor(expected).getRgb()[:3]
+        assert max(abs(a - b) for a, b in zip(actual_rgb, expected_rgb)) <= 2, actual_rgb
     logo = dlg.findChild(QLabel,"universityLogo")
     assert logo.isVisible() and not logo.pixmap().isNull()
     assert all(dlg.rect().contains(w.geometry()) for w in labels)
@@ -73,6 +77,12 @@ try:
     action.trigger()
     QTest.mouseClick(dlg.findChild(QPushButton),Qt.MouseButton.LeftButton)
     assert not dlg.isVisible()
-    print(name, __version__, "PASS")
 finally:
     window.close()
+    # VirtualServer defers closing while its disconnect melody finishes.
+    for _ in range(100):
+        if not window.isVisible():
+            break
+        QTest.qWait(50)
+    assert not window.isVisible()
+print(name, __version__, "PASS")
