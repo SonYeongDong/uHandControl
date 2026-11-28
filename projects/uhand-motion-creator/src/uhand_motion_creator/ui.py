@@ -305,7 +305,9 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         self.led_editor = LedEditor()
         self.parameter_stack.addWidget(self.led_editor)
         self.live = LiveControls(self)
-        self.parameter_stack.addWidget(self.live)
+        # Only the three card editors share a stable height.
+        cl.addWidget(self.live, 1)
+        self.live.hide()
         row=QHBoxLayout();self.name_label=label("동작 이름");row.addWidget(self.name_label)
         self.name=QLineEdit("동작 01");self.name.setMaxLength(60);row.addWidget(self.name);cl.addLayout(row)
         self.notice=label("값을 설정한 뒤 동작 추가를 누르세요.","notice");self.notice.setWordWrap(True);cl.addWidget(self.notice)
@@ -418,7 +420,7 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         for row in range(self.axis_grid.rowCount()):
             self.axis_grid.setRowMinimumHeight(row, 24 if compact else 32)
         # Hidden pages keep old size hints until selected unless their nested layouts refresh.
-        for stack in (self.preview_header, self.parameter_stack):
+        for stack in (self.preview_header, self.parameter_stack, self.live):
             for layout in reversed(stack.findChildren(QLayout)):
                 layout.invalidate()
                 layout.activate()
@@ -509,7 +511,8 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         return f"{('동작','부저','LED')[index]} {self.name_serials[index]:02d}"
 
     def show_edit_controls(self, show):
-        for widget in (self.remote_buttons, self.reset_button, self.name_label, self.name,
+        self.live.setVisible(not show)
+        for widget in (self.parameter_stack, self.remote_buttons, self.reset_button, self.name_label, self.name,
                        self.notice, self.add_button, self.apply_button):
             widget.setVisible(show)
         self.list.set_read_only(not show)
@@ -525,7 +528,6 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
                     self.tabs.setCurrentIndex(previous)
                 return
             self.stop_sound()
-            self.parameter_stack.setCurrentIndex(3)
             self.preview_stack.setCurrentIndex(0)
             self.live.enter()
             self.show_edit_controls(False)
@@ -534,7 +536,6 @@ class MainWindow(FileUi,RemoteUi,QMainWindow):
         if self.live.active:
             self.live.leave()
             self.show_edit_controls(True)
-            self.parameter_stack.setCurrentIndex(previous)
             self.preview_stack.setCurrentIndex(previous)
             if index == previous:
                 self.refresh_actions()

@@ -22,7 +22,7 @@ WINDOWS = sys.platform == "win32"
 MACOS = sys.platform == "darwin"
 PYTHON = ENV / "Scripts" / "python.exe" if WINDOWS else ENV / "bin" / "python"
 GUI_PYTHON = PYTHON.with_name("pythonw.exe") if WINDOWS else PYTHON
-READY = ENV / f".uhand-{VERSION}-{sys.platform}-desktop5-ready"
+READY = ENV / f".uhand-{VERSION}-{sys.platform}-desktop6-ready"
 LOG = ROOT / "build" / "launcher.log"
 PACKAGES = (
     "shared/uhand-server-lifecycle", "shared/uhand-about", "shared/uhand-model",
