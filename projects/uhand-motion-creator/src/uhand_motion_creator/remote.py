@@ -1,6 +1,7 @@
 """Background execution through the public uHandClientModule API."""
 from queue import Queue, Empty
 from threading import Event, Thread
+from time import monotonic
 import uhand_client_module as hand
 from .motion import Motion, Buzzer, LED
 
@@ -20,14 +21,14 @@ class RemoteSession:
     def submit(self, operation, *, endpoint=None, cards=(), cleanup=True, repeat=False):
         if self.busy:
             raise RuntimeError("서버 요청 처리 중입니다.")
-        if operation not in ("connect", "disconnect", "status", "run"):
+        if operation not in ("connect", "disconnect", "status", "run", "live"):
             raise ValueError(operation)
         if operation != "connect" and not self.connected:
             raise RuntimeError("먼저 서버에 연결하세요.")
         if operation == "connect" and self.connected:
             raise RuntimeError("기존 연결을 해제하세요.")
         cards = tuple(cards)
-        if operation == "run" and (not cards or any(type(c) not in (Motion, Buzzer, LED) for _, c in cards)):
+        if operation in ("live", "run") and (not cards or any(type(c) not in (Motion, Buzzer, LED) for _, c in cards)):
             raise ValueError("실행할 카드가 없습니다.")
         if type(repeat) is not bool:
             raise ValueError("반복 재생 값은 bool이어야 합니다.")
@@ -82,13 +83,27 @@ class RemoteSession:
                     continue
                 if not event["connected"]:
                     self.connected = False
+                    self.generation += 1
             if event["type"] == "done":
                 self.busy = False
+                if event["generation"] != self.generation:
+                    event["connected"] = False
                 self.connected = event["connected"]
+                if not self.connected:
+                    self.generation += 1
             result.append(event)
+
+    def _send_card(self, card):
+        if isinstance(card, Motion):
+            self.client.SetuHandPulse(*card.pulses, card.running_time)
+        elif isinstance(card, Buzzer):
+            self.client.SetuHandBuzzer(card.frequency, card.running_time, card.continuous)
+        else:
+            self.client.SetuHandLED(*card.rgb, card.brightness)
 
     def _work(self, operation, endpoint, cards, cleanup, repeat):
         connected = self.connected
+        generation = self.generation
         errors = []
         status = None
 
@@ -109,6 +124,8 @@ class RemoteSession:
             if operation == "connect":
                 self.client.Connect(*endpoint)
                 connected = True
+            elif operation == "live":
+                self._send_card(cards[0][1])
             elif operation == "run":
                 cycle = 1
                 while not self.cancel.is_set():
@@ -116,12 +133,7 @@ class RemoteSession:
                         if self.cancel.is_set():
                             break
                         self.events.put({"type": "progress", "index": index, "card": card, "cycle": cycle, "repeat": repeat})
-                        if isinstance(card, Motion):
-                            self.client.SetuHandPulse(*card.pulses, card.running_time)
-                        elif isinstance(card, Buzzer):
-                            self.client.SetuHandBuzzer(card.frequency, card.running_time, card.continuous)
-                        else:
-                            self.client.SetuHandLED(*card.rgb, card.brightness)
+                        self._send_card(card)
                         self.events.put({"type": "status", "value": self.client.GetStatus()})
                     if not repeat:
                         break
@@ -132,7 +144,7 @@ class RemoteSession:
             if connected and (operation == "disconnect" or
                     operation == "run" and (cleanup or errors or self.cancel.is_set())):
                 silence()
-            if connected and operation != "disconnect":
+            if connected and operation not in ("disconnect", "live"):
                 try:
                     status = self.client.GetStatus()
                 except Exception as exc:
@@ -140,5 +152,5 @@ class RemoteSession:
             if operation == "disconnect" or operation == "connect" and errors:
                 self.client.Disconnect()
                 connected = False
-            self.events.put({"type": "done", "operation": operation, "connected": connected,
+            self.events.put({"type": "done", "operation": operation, "generation": generation, "finished_at": monotonic(), "connected": connected,
                              "errors": errors, "status": status, "stopped": self.cancel.is_set()})

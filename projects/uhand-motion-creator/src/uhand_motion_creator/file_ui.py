@@ -52,7 +52,7 @@ class FileUi:
         self.save_document()
 
     def files_available(self):
-        return not self.is_running() and not self.remote.busy and not self.remote_disconnect_pending
+        return not self.sequence_locked() and not self.remote.busy and not self.remote_disconnect_pending
 
     def refresh_file_state(self):
         if not hasattr(self, "file_actions"):
